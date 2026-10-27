@@ -1,874 +1,881 @@
 <!DOCTYPE html>
 <html lang="fr" class="h-full bg-slate-50">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Générateur de Courriels & Notifications</title>
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- FontAwesome Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              50: '#eff6ff',
-              100: '#dbeafe',
-              500: '#3b82f6',
-              600: '#2563eb',
-              700: '#1d4ed8',
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DuoSync - Tableau de Bord Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .ghost-card { opacity: 0.4; background-color: #f1f5f9; border: 2px dashed #6366f1; }
+        .drag-handle { cursor: grab; }
+        .drag-handle:active { cursor: grabbing; }
+    </style>
+</head>
+<body class="h-full flex flex-col text-slate-800 antialiased overflow-x-hidden">
+
+    <!-- HEADER / NAVIGATION -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-xs">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold shadow-md shadow-indigo-100">
+                    <i data-lucide="layers" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h1 class="text-base font-bold text-slate-900 leading-tight">DuoSync Workspace</h1>
+                    <p class="text-xs text-slate-500">Gestion collaborative & Suivi de projets</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-2">
+                <button onclick="exportToExcel()" class="flex items-center space-x-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-semibold transition">
+                    <i data-lucide="download" class="w-4 h-4"></i>
+                    <span class="hidden sm:inline">Exporter (Excel)</span>
+                </button>
+
+                <div id="sync-status" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-amber-50 text-amber-700 text-xs font-medium border border-amber-200">
+                    <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                    <span id="sync-text">Config requise</span>
+                </div>
+
+                <button onclick="openConfigModal()" class="flex items-center space-x-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition">
+                    <i data-lucide="settings" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN DASHBOARD CONTAINER -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6">
+
+        <!-- BARRE DE RECHERCHE & INBOX -->
+        <section class="bg-white rounded-2xl border border-slate-200 shadow-xs p-5 space-y-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <div class="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
+                        <i data-lucide="inbox" class="w-5 h-5"></i>
+                    </div>
+                    <h2 class="font-bold text-slate-900 text-base">Inbox & Capture Rapide</h2>
+                </div>
+                <input type="text" id="search-bar" oninput="renderAll()" placeholder="🔎 Rechercher une tâche, un nom..." class="px-3 py-1.5 text-xs bg-slate-100 border border-slate-200 rounded-lg w-48 focus:w-64 transition-all focus:outline-none">
+            </div>
+
+            <form id="inbox-form" onsubmit="handleInboxSubmit(event)" class="flex gap-2">
+                <input type="text" id="inbox-input" placeholder="Saisir une idée, action ou travailleur..." 
+                    class="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition">
+                <button type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm rounded-xl shadow-sm transition flex items-center space-x-1.5">
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                    <span>Capturer</span>
+                </button>
+            </form>
+            <div id="inbox-list" class="space-y-2 max-h-56 overflow-y-auto pt-2"></div>
+        </section>
+
+        <!-- GRILLE PRINCIPALE -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+            <!-- COLONNE GAUCHE -->
+            <div class="space-y-6">
+
+                <!-- 1. SIMPLE TO-DO -->
+                <section class="bg-white rounded-2xl border border-slate-200 shadow-xs p-5">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-2">
+                            <div class="p-2 bg-amber-50 text-amber-600 rounded-lg"><i data-lucide="check-square" class="w-5 h-5"></i></div>
+                            <div>
+                                <h2 class="font-bold text-slate-900 text-base">Simple To-Do</h2>
+                                <p class="text-[10px] text-slate-400">Avec échéance et priorité par glisser-déposer</p>
+                            </div>
+                        </div>
+                        <button onclick="openModal('todo')" class="text-xs text-indigo-600 font-semibold hover:underline">+ Ajouter</button>
+                    </div>
+                    <div id="todo-list" class="space-y-2.5 max-h-80 overflow-y-auto min-h-[50px]"></div>
+                </section>
+
+                <!-- 2. TACHES RECURRENTES -->
+                <section class="bg-white rounded-2xl border border-slate-200 shadow-xs p-5">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-2">
+                            <div class="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><i data-lucide="repeat" class="w-5 h-5"></i></div>
+                            <div>
+                                <h2 class="font-bold text-slate-900 text-base">Tâches Récurrentes</h2>
+                                <p class="text-[10px] text-slate-400">Réinitialisables à volonté</p>
+                            </div>
+                        </div>
+                        <button onclick="openModal('recurring')" class="text-xs text-indigo-600 font-semibold hover:underline">+ Ajouter</button>
+                    </div>
+                    <div id="recurring-list" class="space-y-2.5 max-h-64 overflow-y-auto min-h-[50px]"></div>
+                </section>
+
+                <!-- 3. PROJETS EN COURS -->
+                <section class="bg-white rounded-2xl border border-slate-200 shadow-xs p-5">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-2">
+                            <div class="p-2 bg-cyan-50 text-cyan-600 rounded-lg"><i data-lucide="folder-kanban" class="w-5 h-5"></i></div>
+                            <h2 class="font-bold text-slate-900 text-base">Projets en cours</h2>
+                        </div>
+                        <button onclick="openModal('project')" class="text-xs text-indigo-600 font-semibold hover:underline">+ Nouveau Projet</button>
+                    </div>
+                    <div id="project-list" class="space-y-3.5 max-h-96 overflow-y-auto min-h-[50px]"></div>
+                </section>
+
+            </div>
+
+            <!-- COLONNE DROITE -->
+            <div class="space-y-6">
+
+                <!-- 4. A CONTACTER -->
+                <section class="bg-white rounded-2xl border border-slate-200 shadow-xs p-5">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-2">
+                            <div class="p-2 bg-blue-50 text-blue-600 rounded-lg"><i data-lucide="phone-call" class="w-5 h-5"></i></div>
+                            <div>
+                                <h2 class="font-bold text-slate-900 text-base">À Contacter</h2>
+                                <p class="text-[10px] text-slate-400">Avec date de suivi/rappel</p>
+                            </div>
+                        </div>
+                        <button onclick="openModal('contact')" class="text-xs text-indigo-600 font-semibold hover:underline">+ Ajouter</button>
+                    </div>
+                    <div id="contact-list" class="space-y-2.5 max-h-80 overflow-y-auto min-h-[50px]"></div>
+                </section>
+
+                <!-- 5. FORMATIONS DES TRAVAILLEURS -->
+                <section class="bg-white rounded-2xl border border-slate-200 shadow-xs p-5">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-2">
+                            <div class="p-2 bg-purple-50 text-purple-600 rounded-lg"><i data-lucide="graduation-cap" class="w-5 h-5"></i></div>
+                            <div>
+                                <h2 class="font-bold text-slate-900 text-base">Formations - Suivi des travailleurs</h2>
+                                <p class="text-[11px] text-slate-400">Vérification de la validation de la formation du groupe</p>
+                            </div>
+                        </div>
+                        <button onclick="openModal('training')" class="text-xs text-indigo-600 font-semibold hover:underline">+ Ajouter Travailleur</button>
+                    </div>
+                    <div id="training-list" class="space-y-2.5 max-h-64 overflow-y-auto min-h-[50px]"></div>
+                </section>
+
+                <!-- 6. TABLEAU IT (PRIVÉ) -->
+                <section class="bg-slate-900 rounded-2xl border border-slate-800 shadow-xs p-5 text-white">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-2">
+                            <div class="p-2 bg-slate-800 text-indigo-400 rounded-lg"><i data-lucide="terminal" class="w-5 h-5"></i></div>
+                            <div>
+                                <h2 class="font-bold text-white text-base">Tableau IT & Suivi</h2>
+                                <p class="text-xs text-slate-400">Pense-bête personnel demandes techniques</p>
+                            </div>
+                        </div>
+                        <button onclick="openModal('it')" class="text-xs text-indigo-300 font-semibold hover:underline">+ Demande</button>
+                    </div>
+                    <div id="it-list" class="space-y-2.5 max-h-64 overflow-y-auto min-h-[50px]"></div>
+                </section>
+
+            </div>
+
+        </div>
+
+        <!-- SECTION HISTORIQUE ET TACHES TERMINÉES -->
+        <section class="bg-white rounded-2xl border border-slate-200 shadow-xs p-5">
+            <details class="group">
+                <summary class="flex items-center justify-between cursor-pointer list-none">
+                    <div class="flex items-center space-x-2">
+                        <div class="p-2 bg-slate-100 text-slate-600 rounded-lg">
+                            <i data-lucide="archive" class="w-5 h-5"></i>
+                        </div>
+                        <h2 class="font-bold text-slate-800 text-base">Historique & Tâches terminées</h2>
+                        <span id="history-count" class="px-2 py-0.5 bg-slate-100 text-slate-600 text-xs font-semibold rounded-full">0</span>
+                    </div>
+                    <i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform"></i>
+                </summary>
+                <div id="history-list" class="mt-4 pt-4 border-t border-slate-100 space-y-2 max-h-60 overflow-y-auto"></div>
+            </details>
+        </section>
+
+    </main>
+
+    <!-- MODALE DE CONFIGURATION FIREBASE -->
+    <div id="config-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100">
+            <h3 class="text-lg font-bold text-slate-900 mb-2">Configuration Firebase</h3>
+            <p class="text-xs text-slate-500 mb-4">Collez l'objet JSON fourni par Firebase pour synchroniser l'appareil.</p>
+            <textarea id="config-json-input" rows="7" placeholder='{"apiKey": "...", "authDomain": "...", "projectId": "..."}' class="w-full font-mono text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none mb-4"></textarea>
+            <div class="flex justify-end space-x-2">
+                <button onclick="closeConfigModal()" class="px-4 py-2 bg-slate-100 text-slate-700 text-xs font-semibold rounded-xl">Annuler</button>
+                <button onclick="saveConfig()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl">Enregistrer & Connecter</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODALE UNIVERSELLE (CREATION & MODIFICATION) -->
+    <div id="universal-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100">
+            <h3 id="modal-title" class="text-lg font-bold text-slate-900 mb-4">Ajouter un élément</h3>
+            <form id="universal-form" onsubmit="handleUniversalSubmit(event)" class="space-y-3">
+                <input type="hidden" id="modal-type">
+                <input type="hidden" id="modal-edit-id">
+                <div>
+                    <label id="m-title-label" class="block text-xs font-semibold text-slate-600 mb-1">Intitulé / Titre</label>
+                    <input type="text" id="m-title" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Responsable</label>
+                    <select id="m-assignee" onchange="checkAssigneeCustom(this.value)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <option value="Non assigné">Non assigné</option>
+                        <option value="Mickaela">Mickaela</option>
+                        <option value="Koloina">Koloina</option>
+                        <option value="Les deux">Les deux</option>
+                        <option value="custom">Autre (Saisir un nom...)</option>
+                    </select>
+                </div>
+                <div id="custom-assignee-container" class="hidden">
+                    <input type="text" id="m-custom-assignee" placeholder="Nom du nouveau responsable..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div id="extra-field-container"></div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closeModalWindow()" class="px-4 py-2 bg-slate-100 text-slate-700 text-xs font-semibold rounded-xl">Annuler</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SCRIPTS FIREBASE & LOGIQUE APP -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        let db = null;
+        let localData = { inbox: [], recurring: [], contact: [], training: [], todo: [], project: [], it: [], history: [] };
+        let sortableInstances = {};
+
+        window.onload = function() {
+            lucide.createIcons();
+            const savedConfig = localStorage.getItem('duo_firebase_config');
+            if (savedConfig) {
+                try {
+                    initFirebase(JSON.parse(savedConfig));
+                } catch (e) {
+                    console.error("Config invalide");
+                }
             }
-          }
-        }
-      }
-    }
-  </script>
-  <style>
-    .custom-scrollbar::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-track {
-      background: #f1f5f9;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: #cbd5e1;
-      border-radius: 3px;
-    }
-  </style>
-</head>
-<body class="h-full text-slate-800 antialiased flex flex-col font-sans">
-
-  <!-- Header -->
-  <header class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-      <div class="flex items-center space-x-3">
-        <div class="bg-brand-600 p-2 rounded-lg text-white">
-          <i class="fa-solid fa-envelope-open-text text-xl"></i>
-        </div>
-        <div>
-          <h1 class="font-bold text-lg leading-tight">Notification Mail Studio</h1>
-          <p class="text-xs text-slate-400">Générateur de courriels & Base de données</p>
-        </div>
-      </div>
-      
-      <div class="flex items-center space-x-3">
-        <button id="openManagerBtn" onclick="toggleModal('templateManagerModal', true)" class="text-xs sm:text-sm bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg border border-slate-700 flex items-center gap-2 transition">
-          <i class="fa-solid fa-folder-gear text-brand-500"></i>
-          <span>Gérer la BDD des modèles</span>
-        </button>
-      </div>
-    </div>
-  </header>
-
-  <!-- Main Content Layout -->
-  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-    <!-- LEFT PANEL: CONTROLS & FORM (5 COLS) -->
-    <section class="lg:col-span-5 flex flex-col gap-5 custom-scrollbar overflow-y-auto max-h-[calc(100vh-6rem)] pr-1">
-      
-      <!-- Card: Choix du Modèle / Type de courriel -->
-      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-        <div class="flex items-center justify-between mb-3">
-          <label for="templateSelect" class="block text-sm font-semibold text-slate-900 flex items-center gap-2">
-            <i class="fa-solid fa-layer-group text-brand-600"></i>
-            Type de courriel (BDD)
-          </label>
-          <span id="templateBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-50 text-brand-700 border border-brand-100">
-            Défaut
-          </span>
-        </div>
-        <select id="templateSelect" onchange="loadTemplate(this.value)" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none transition">
-          <!-- Populated by JS -->
-        </select>
-      </div>
-
-      <!-- Card: Formulaire de Rédaction -->
-      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 space-y-4">
-        
-        <!-- En-tête / Sujet -->
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Sujet du courriel</label>
-          <input type="text" id="emailSubject" oninput="updatePreview()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none" placeholder="ex: Action requise - Mise à jour de votre dossier">
-        </div>
-
-        <!-- Titre principal de la notification -->
-        <div>
-          <div class="flex justify-between items-center mb-1">
-            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Titre de la notification</label>
-            <button onclick="openAiAssist('title')" class="text-xs text-purple-600 hover:text-purple-700 font-medium flex items-center gap-1">
-              <i class="fa-solid fa-wand-magic-sparkles"></i> IA Reformuler
-            </button>
-          </div>
-          <input type="text" id="emailHeading" oninput="updatePreview()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none" placeholder="ex: Documents manquants pour votre dossier">
-        </div>
-
-        <!-- Message d'introduction -->
-        <div>
-          <div class="flex justify-between items-center mb-1">
-            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Message principal</label>
-            <button onclick="openAiAssist('intro')" class="text-xs text-purple-600 hover:text-purple-700 font-medium flex items-center gap-1">
-              <i class="fa-solid fa-wand-magic-sparkles"></i> IA Reformuler
-            </button>
-          </div>
-          <textarea id="emailIntro" oninput="updatePreview()" rows="3" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none resize-none" placeholder="Bonjour, afin de finaliser la mise à jour de votre dossier..."></textarea>
-        </div>
-
-        <!-- SECTION DYNAMIQUE: Éléments à cocher (Checklist) -->
-        <div id="checklistSection" class="border-t border-slate-100 pt-4">
-          <div class="flex items-center justify-between mb-2">
-            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-              <i class="fa-solid fa-list-check text-slate-500"></i>
-              Éléments à inclure / cocher
-            </label>
-            <span class="text-[11px] text-slate-400">Sélectionnez les pièces</span>
-          </div>
-
-          <!-- Dynamic Checkboxes Container -->
-          <div id="checkboxesContainer" class="space-y-2 bg-slate-50 p-3 rounded-lg border border-slate-200 max-h-48 overflow-y-auto custom-scrollbar">
-            <!-- Rendered by JS -->
-          </div>
-        </div>
-
-        <!-- Note de bas de message / Consignes -->
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Note complémentaire (optionnelle)</label>
-          <textarea id="emailFooterNote" oninput="updatePreview()" rows="2" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none resize-none" placeholder="Merci de nous transmettre ces éléments dans les plus brefs délais."></textarea>
-        </div>
-
-        <!-- Bouton d'action (CTA) -->
-        <div class="border-t border-slate-100 pt-4 space-y-3">
-          <div class="flex items-center justify-between">
-            <label class="text-xs font-semibold text-slate-700 uppercase tracking-wider">Bouton d'action (CTA)</label>
-            <label class="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" id="showCtaToggle" onchange="updatePreview()" checked class="sr-only peer">
-              <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-600"></div>
-            </label>
-          </div>
-          
-          <div id="ctaFields" class="grid grid-cols-2 gap-2">
-            <input type="text" id="ctaText" oninput="updatePreview()" value="Mettre à jour mon dossier" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none" placeholder="Texte du bouton">
-            <input type="text" id="ctaUrl" oninput="updatePreview()" value="https://exemple.com/espace-client" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none" placeholder="https://...">
-          </div>
-        </div>
-
-        <!-- Personnalisation Apparence -->
-        <div class="border-t border-slate-100 pt-4 grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Badge de statut</label>
-            <select id="statusBadgeSelect" onchange="updatePreview()" class="w-full border border-slate-300 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
-              <option value="none">Aucun badge</option>
-              <option value="warning" selected>⚠️ Rappel Important</option>
-              <option value="urgent">🚨 Action Urgente</option>
-              <option value="info">ℹ️ Information</option>
-              <option value="success">✅ Validé</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Couleur d'accent</label>
-            <select id="colorAccentSelect" onchange="updatePreview()" class="w-full border border-slate-300 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
-              <option value="blue">Bleu Professionnel</option>
-              <option value="amber">Orange / Warning</option>
-              <option value="red">Rouge / Urgence</option>
-              <option value="emerald">Vert / Validation</option>
-              <option value="slate">Gris / Neutre</option>
-            </select>
-          </div>
-        </div>
-
-      </div>
-    </section>
-
-    <!-- RIGHT PANEL: PREVIEW & CODE OUTPUT (7 COLS) -->
-    <section class="lg:col-span-7 flex flex-col gap-4">
-      
-      <!-- Top Action Bar -->
-      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-3 flex flex-wrap items-center justify-between gap-3">
-        <div class="flex items-center space-x-1 bg-slate-100 p-1 rounded-lg">
-          <button id="tabPreviewBtn" onclick="switchTab('preview')" class="px-3 py-1.5 text-xs font-semibold rounded-md bg-white text-slate-900 shadow-sm transition">
-            <i class="fa-solid fa-eye me-1"></i> Aperçu visuel
-          </button>
-          <button id="tabCodeBtn" onclick="switchTab('code')" class="px-3 py-1.5 text-xs font-semibold rounded-md text-slate-600 hover:text-slate-900 transition">
-            <i class="fa-solid fa-code me-1"></i> Code HTML
-          </button>
-          <button id="tabTextBtn" onclick="switchTab('text')" class="px-3 py-1.5 text-xs font-semibold rounded-md text-slate-600 hover:text-slate-900 transition">
-            <i class="fa-solid fa-align-left me-1"></i> Texte Brut
-          </button>
-        </div>
-
-        <div class="flex items-center space-x-2">
-          <!-- BOUTON DE TÉLÉCHARGEMENT DIRECT .HTML -->
-          <button onclick="downloadHtmlFile()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm transition" title="Télécharger le fichier .html pour Outlook">
-            <i class="fa-solid fa-download"></i>
-            <span>Télécharger .html</span>
-          </button>
-
-          <!-- BOUTON COPIER -->
-          <button onclick="copyCurrentOutput()" class="bg-brand-600 hover:bg-brand-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm transition">
-            <i class="fa-solid fa-copy"></i>
-            <span id="copyBtnText">Copier le code</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Preview Window Wrapper -->
-      <div class="bg-slate-200/70 rounded-xl border border-slate-300 p-4 sm:p-8 flex-1 flex justify-center items-start overflow-y-auto custom-scrollbar min-h-[500px]">
-        
-        <!-- VISUAL PREVIEW CONTAINER -->
-        <div id="visualPreview" class="w-full max-w-[560px] bg-white rounded-xl shadow-lg overflow-hidden border border-slate-200 transition-all">
-          <!-- Dynamic Email Content injected here -->
-        </div>
-
-        <!-- CODE PREVIEW CONTAINER (Hidden by default) -->
-        <div id="codePreview" class="w-full h-full hidden">
-          <pre class="bg-slate-900 text-slate-100 p-4 rounded-xl text-xs font-mono overflow-x-auto h-full max-h-[600px] custom-scrollbar border border-slate-800"><code id="codeOutput"></code></pre>
-        </div>
-
-        <!-- TEXT PREVIEW CONTAINER (Hidden by default) -->
-        <div id="textPreview" class="w-full h-full hidden">
-          <textarea id="textOutput" readonly class="w-full h-full min-h-[450px] bg-white p-4 rounded-xl text-xs font-mono border border-slate-300 focus:outline-none resize-none"></textarea>
-        </div>
-
-      </div>
-    </section>
-
-  </main>
-
-  <!-- MODAL 1: TEMPLATE MANAGER (BDD MODÈLES) -->
-  <div id="templateManagerModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
-      
-      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-        <h3 class="font-bold text-slate-900 flex items-center gap-2">
-          <i class="fa-solid fa-database text-brand-600"></i>
-          Gestionnaire de la BDD des modèles
-        </h3>
-        <button onclick="toggleModal('templateManagerModal', false)" class="text-slate-400 hover:text-slate-600">
-          <i class="fa-solid fa-xmark text-lg"></i>
-        </button>
-      </div>
-
-      <div class="p-6 overflow-y-auto space-y-6 custom-scrollbar flex-1">
-        
-        <!-- Formulaire d'ajout / édition de modèle -->
-        <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-3">
-          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700" id="editorTitle">Créer un nouveau type de courriel</h4>
-          
-          <input type="hidden" id="editTemplateId" value="">
-          <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">Nom du modèle / Type de courriel</label>
-            <input type="text" id="editTemplateName" placeholder="ex: Relance Fiche Médicale" class="w-full border border-slate-300 rounded-md px-3 py-1.5 text-sm">
-          </div>
-
-          <div class="grid grid-cols-2 gap-2">
-            <div>
-              <label class="block text-xs font-medium text-slate-600 mb-1">Sujet par défaut</label>
-              <input type="text" id="editTemplateSubject" placeholder="ex: Rappel : Documents requis" class="w-full border border-slate-300 rounded-md px-3 py-1.5 text-sm">
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-slate-600 mb-1">Titre de notification</label>
-              <input type="text" id="editTemplateHeading" placeholder="ex: Action requise" class="w-full border border-slate-300 rounded-md px-3 py-1.5 text-sm">
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">Éléments à cocher (1 par ligne)</label>
-            <textarea id="editTemplateItems" rows="4" placeholder="Carte ASP&#10;Carte SIMDUT&#10;Carte Isolation / Cadenassage" class="w-full border border-slate-300 rounded-md px-3 py-1.5 text-sm font-mono"></textarea>
-          </div>
-
-          <div class="flex justify-end gap-2 pt-2">
-            <button onclick="resetTemplateForm()" class="px-3 py-1.5 text-xs text-slate-600 hover:text-slate-800">Réinitialiser</button>
-            <button onclick="saveTemplateToDb()" class="px-4 py-1.5 text-xs font-semibold bg-brand-600 text-white rounded-md hover:bg-brand-700">Enregistrer dans la BDD</button>
-          </div>
-        </div>
-
-        <!-- Liste des modèles existants -->
-        <div>
-          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">Modèles enregistrés en BDD</h4>
-          <div id="templateListDb" class="space-y-2">
-            <!-- Rendered by JS -->
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL 2: IA ASSISTANT REFORMULATION -->
-  <div id="aiModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden">
-      
-      <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-purple-50">
-        <h3 class="font-bold text-purple-900 flex items-center gap-2">
-          <i class="fa-solid fa-wand-magic-sparkles text-purple-600"></i>
-          Reformulation par IA
-        </h3>
-        <button onclick="toggleModal('aiModal', false)" class="text-purple-400 hover:text-purple-600">
-          <i class="fa-solid fa-xmark text-lg"></i>
-        </button>
-      </div>
-
-      <div class="p-5 space-y-4">
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Choisir le ton souhaité</label>
-          <div class="grid grid-cols-2 gap-2" id="aiToneButtons">
-            <button onclick="selectAiTone('clear')" class="ai-tone-btn active px-3 py-2 border text-xs rounded-lg text-left font-medium border-purple-500 bg-purple-50 text-purple-700">
-              ⚡ Ultra Clair & Concis
-            </button>
-            <button onclick="selectAiTone('urgent')" class="ai-tone-btn px-3 py-2 border text-xs rounded-lg text-left font-medium border-slate-200 hover:border-slate-300">
-              🚨 Relance Urgente
-            </button>
-            <button onclick="selectAiTone('formal')" class="ai-tone-btn px-3 py-2 border text-xs rounded-lg text-left font-medium border-slate-200 hover:border-slate-300">
-              👔 Officiel & Formel
-            </button>
-            <button onclick="selectAiTone('friendly')" class="ai-tone-btn px-3 py-2 border text-xs rounded-lg text-left font-medium border-slate-200 hover:border-slate-300">
-              🤝 Courtois & Accueillant
-            </button>
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Texte d'origine</label>
-          <div id="aiOriginalText" class="p-2.5 bg-slate-100 rounded-lg text-xs text-slate-600 italic max-h-24 overflow-y-auto"></div>
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-purple-900 uppercase tracking-wider mb-1">Suggestion de l'IA</label>
-          <div id="aiResultText" class="p-3 bg-purple-50 border border-purple-200 rounded-lg text-sm text-purple-950 font-medium min-h-[80px]">
-            <em>Cliquez sur "Générer la reformulation"...</em>
-          </div>
-        </div>
-
-        <div class="flex justify-end gap-2 pt-2">
-          <button onclick="generateAiSuggestion()" class="px-4 py-2 text-xs font-semibold bg-purple-600 hover:bg-purple-700 text-white rounded-lg flex items-center gap-1.5">
-            <i class="fa-solid fa-rotate"></i> Générer la reformulation
-          </button>
-          <button onclick="applyAiSuggestion()" class="px-4 py-2 text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-white rounded-lg">
-            Appliquer ce texte
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- APPLICATION LOGIC (JS) -->
-  <script>
-    // INITIAL DEFAULT BDD (LocalStorage)
-    const DEFAULT_TEMPLATES = [
-      {
-        id: 'relance-travailleurs',
-        name: 'Relance travailleurs (Documents & Cartes)',
-        subject: 'Rappel important : Conformité de vos cartes et attestations',
-        heading: 'Mise à jour requise de vos cartes d\'accès',
-        intro: 'Bonjour,\n\nAfin d\'assurer votre accès aux sites de travail et le respect des normes de sécurité, nous vous prions de nous transmettre les pièces cochées ci-dessous :',
-        items: [
-          { id: 'item-1', label: 'Carte ASP Construction', checked: true },
-          { id: 'item-2', label: 'Carte SIMDUT 2015', checked: true },
-          { id: 'item-3', label: 'Carte Isolation / Cadenassage', checked: false },
-          { id: 'item-4', label: 'Formations non terminées (Un lien vous a été envoyé par courriel, merci de vérifier vos spams ou nous signaler si non reçu)', checked: true },
-          { id: 'item-5', label: 'Formulaire médical à compléter (Le lien personnel vous a été envoyé par courriel et SMS)', checked: false }
-        ],
-        footerNote: 'Merci de transmettre vos documents par retour de courriel ou via votre espace sécurisé.',
-        badge: 'warning',
-        color: 'amber'
-      },
-      {
-        id: 'onboarding-accueil',
-        name: 'Accueil & Intégration nouveau membre',
-        subject: 'Bienvenue dans l\'équipe - Validation de votre compte',
-        heading: 'Finalisez votre inscription à la plateforme',
-        intro: 'Bonjour et bienvenue parmi nous !\n\nVotre espace utilisateur a été créé avec succès. Pour démarrer dans les meilleures conditions, merci de compléter les étapes suivantes :',
-        items: [
-          { id: 'item-1', label: 'Validation de la politique d\'entreprise', checked: true },
-          { id: 'item-2', label: 'Mise à jour des coordonnées d\'urgence', checked: true },
-          { id: 'item-3', label: 'Signature du contrat d\'accès', checked: false }
-        ],
-        footerNote: 'En cas de difficulté pour vous connecter, répondez simplement à ce message.',
-        badge: 'info',
-        color: 'blue'
-      }
-    ];
-
-    // State Variables
-    let currentTemplates = [];
-    let currentActiveTemplate = null;
-    let activeTab = 'preview'; // 'preview' | 'code' | 'text'
-    let currentAiTargetField = null;
-    let currentAiTone = 'clear';
-
-    // COLOR MAPS FOR EMAIL PREVIEW
-    const COLOR_SCHEMES = {
-      blue: { bg: '#2563eb', text: '#ffffff', border: '#dbeafe', badgeBg: '#eff6ff', badgeText: '#1e40af' },
-      amber: { bg: '#d97706', text: '#ffffff', border: '#fef3c7', badgeBg: '#fffbe1', badgeText: '#92400e' },
-      red: { bg: '#dc2626', text: '#ffffff', border: '#fee2e2', badgeBg: '#fef2f2', badgeText: '#991b1b' },
-      emerald: { bg: '#059669', text: '#ffffff', border: '#d1fae5', badgeBg: '#ecfdf5', badgeText: '#065f46' },
-      slate: { bg: '#475569', text: '#ffffff', border: '#e2e8f0', badgeBg: '#f8fafc', badgeText: '#334155' }
-    };
-
-    // INITIALIZATION
-    document.addEventListener('DOMContentLoaded', () => {
-      loadDatabase();
-      renderTemplateSelect();
-      loadTemplate(currentTemplates[0].id);
-    });
-
-    // BDD / LOCALSTORAGE FUNCTIONS
-    function loadDatabase() {
-      const stored = localStorage.getItem('app_email_templates');
-      if (stored) {
-        try {
-          currentTemplates = JSON.parse(stored);
-        } catch(e) {
-          currentTemplates = DEFAULT_TEMPLATES;
-        }
-      } else {
-        currentTemplates = DEFAULT_TEMPLATES;
-        saveDatabase();
-      }
-    }
-
-    function saveDatabase() {
-      localStorage.setItem('app_email_templates', JSON.stringify(currentTemplates));
-      renderTemplateSelect();
-      renderDbManagerList();
-    }
-
-    function renderTemplateSelect() {
-      const select = document.getElementById('templateSelect');
-      select.innerHTML = currentTemplates.map(t => 
-        `<option value="${t.id}">${t.name}</option>`
-      ).join('');
-    }
-
-    function loadTemplate(id) {
-      const template = currentTemplates.find(t => t.id === id) || currentTemplates[0];
-      currentActiveTemplate = JSON.parse(JSON.stringify(template)); // Deep clone
-
-      document.getElementById('emailSubject').value = currentActiveTemplate.subject || '';
-      document.getElementById('emailHeading').value = currentActiveTemplate.heading || '';
-      document.getElementById('emailIntro').value = currentActiveTemplate.intro || '';
-      document.getElementById('emailFooterNote').value = currentActiveTemplate.footerNote || '';
-      document.getElementById('statusBadgeSelect').value = currentActiveTemplate.badge || 'none';
-      document.getElementById('colorAccentSelect').value = currentActiveTemplate.color || 'blue';
-
-      renderCheckboxes();
-      updatePreview();
-    }
-
-    function renderCheckboxes() {
-      const container = document.getElementById('checkboxesContainer');
-      if (!currentActiveTemplate.items || currentActiveTemplate.items.length === 0) {
-        container.innerHTML = '<p class="text-xs text-slate-400 italic">Aucun élément spécifique défini pour ce type de courriel.</p>';
-        return;
-      }
-
-      container.innerHTML = currentActiveTemplate.items.map((item, index) => `
-        <label class="flex items-start gap-2.5 p-2 rounded hover:bg-white transition cursor-pointer text-xs border border-transparent hover:border-slate-200">
-          <input type="checkbox" onchange="toggleItemCheck(${index}, this.checked)" ${item.checked ? 'checked' : ''} class="mt-0.5 rounded border-slate-300 text-brand-600 focus:ring-brand-500">
-          <span class="text-slate-700 leading-tight">${item.label}</span>
-        </label>
-      `).join('');
-    }
-
-    function toggleItemCheck(index, isChecked) {
-      if (currentActiveTemplate && currentActiveTemplate.items[index]) {
-        currentActiveTemplate.items[index].checked = isChecked;
-        updatePreview();
-      }
-    }
-
-    // GENERATE OUTLOOK-COMPATIBLE HTML & PREVIEW
-    function updatePreview() {
-      const subject = document.getElementById('emailSubject').value;
-      const heading = document.getElementById('emailHeading').value;
-      const intro = document.getElementById('emailIntro').value;
-      const footerNote = document.getElementById('emailFooterNote').value;
-      const showCta = document.getElementById('showCtaToggle').checked;
-      const ctaText = document.getElementById('ctaText').value;
-      const ctaUrl = document.getElementById('ctaUrl').value;
-      const badge = document.getElementById('statusBadgeSelect').value;
-      const colorKey = document.getElementById('colorAccentSelect').value;
-      
-      const theme = COLOR_SCHEMES[colorKey] || COLOR_SCHEMES.blue;
-
-      // Filter checked items
-      const checkedItems = (currentActiveTemplate?.items || []).filter(i => i.checked);
-
-      // BADGE HTML (Outlook Tables)
-      let badgeHtml = '';
-      if (badge === 'warning') {
-        badgeHtml = `<table role="presentation" border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 16px;"><tr><td style="background-color: #fffbe1; color: #92400e; border: 1px solid #fef3c7; font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 12px; font-family: Arial, sans-serif;">⚠️ RAPPEL IMPORTANT</td></tr></table>`;
-      } else if (badge === 'urgent') {
-        badgeHtml = `<table role="presentation" border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 16px;"><tr><td style="background-color: #fef2f2; color: #991b1b; border: 1px solid #fee2e2; font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 12px; font-family: Arial, sans-serif;">🚨 ACTION URGENTE</td></tr></table>`;
-      } else if (badge === 'info') {
-        badgeHtml = `<table role="presentation" border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 16px;"><tr><td style="background-color: #eff6ff; color: #1e40af; border: 1px solid #dbeafe; font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 12px; font-family: Arial, sans-serif;">ℹ️ INFORMATION</td></tr></table>`;
-      } else if (badge === 'success') {
-        badgeHtml = `<table role="presentation" border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 16px;"><tr><td style="background-color: #ecfdf5; color: #065f46; border: 1px solid #d1fae5; font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 12px; font-family: Arial, sans-serif;">✅ MISE À JOUR VALIDÉE</td></tr></table>`;
-      }
-
-      // ITEMS LIST HTML
-      let itemsListHtml = '';
-      if (checkedItems.length > 0) {
-        itemsListHtml = `
-          <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-top: 16px; margin-bottom: 20px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
-            <tr>
-              <td style="padding: 12px 16px;">
-                <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
-                  ${checkedItems.map(item => `
-                    <tr>
-                      <td valign="top" style="padding: 6px 8px 6px 0; width: 20px; font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; color: ${theme.bg};">
-                        ✓
-                      </td>
-                      <td valign="top" style="padding: 6px 0; font-family: Arial, sans-serif; font-size: 14px; color: #334155; line-height: 1.4;">
-                        ${item.label.replace(/\n/g, '<br>')}
-                      </td>
-                    </tr>
-                  `).join('')}
-                </table>
-              </td>
-            </tr>
-          </table>
-        `;
-      }
-
-      // CTA BUTTON HTML (Outlook VML Compatible)
-      let ctaHtml = '';
-      if (showCta && ctaText) {
-        ctaHtml = `
-          <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-top: 24px; margin-bottom: 24px;">
-            <tr>
-              <td align="center">
-                <table role="presentation" border="0" cellspacing="0" cellpadding="0">
-                  <tr>
-                    <td align="center" bgcolor="${theme.bg}" style="border-radius: 6px;">
-                      <a href="${ctaUrl}" target="_blank" style="font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; color: ${theme.text}; text-decoration: none; display: inline-block; padding: 12px 28px; border-radius: 6px; background-color: ${theme.bg};">
-                        ${ctaText}
-                      </a>
-                    </td>
-                  </tr>
-                </table>
-              </td>
-            </tr>
-          </table>
-        `;
-      }
-
-      // FULL EMAIL HTML TEMPLATE (OUTLOOK HYBRID DESIGN)
-      const fullEmailHtml = `<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${subject}</title>
-</head>
-<body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: Arial, sans-serif;">
-  
-  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f1f5f9; padding: 20px 10px;">
-    <tr>
-      <td align="center">
-        
-        <!-- MAIN CARD TABLE -->
-        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 540px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px;">
-          <tr>
-            <td style="padding: 28px 24px;">
-              
-              <!-- LOGO / HEADER -->
-              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="border-bottom: 1px solid #f1f5f9; margin-bottom: 20px;">
-                <tr>
-                  <td style="padding-bottom: 12px; font-family: Arial, sans-serif; font-size: 15px; font-weight: 800; color: #0f172a; letter-spacing: -0.3px;">
-                    SYSTEM NOTIFICATION
-                  </td>
-                </tr>
-              </table>
-
-              <!-- BADGE -->
-              ${badgeHtml}
-
-              <!-- HEADING -->
-              <h1 style="margin: 0 0 12px 0; font-family: Arial, sans-serif; font-size: 18px; font-weight: bold; color: #0f172a; line-height: 1.3;">
-                ${heading}
-              </h1>
-
-              <!-- INTRO -->
-              <p style="margin: 0 0 16px 0; font-family: Arial, sans-serif; font-size: 14px; line-height: 1.5; color: #475569; white-space: pre-line;">
-${intro}
-              </p>
-
-              <!-- CHECKLIST -->
-              ${itemsListHtml}
-
-              <!-- FOOTER NOTE -->
-              ${footerNote ? `<p style="margin: 16px 0; font-family: Arial, sans-serif; font-size: 13px; line-height: 1.4; color: #64748b; font-style: italic;">${footerNote}</p>` : ''}
-
-              <!-- CTA -->
-              ${ctaHtml}
-
-              <!-- FOOTER COPYRIGHT -->
-              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="border-top: 1px solid #f1f5f9; margin-top: 20px;">
-                <tr>
-                  <td style="padding-top: 16px; font-family: Arial, sans-serif; font-size: 11px; color: #94a3b8; text-align: center; line-height: 1.4;">
-                    Ce message vous a été envoyé automatiquement. Merci de ne pas y répondre directement sauf instruction contraire.
-                  </td>
-                </tr>
-              </table>
-
-            </td>
-          </tr>
-        </table>
-
-      </td>
-    </tr>
-  </table>
-
-</body>
-</html>`;
-
-      // RENDER TO PREVIEWS
-      document.getElementById('visualPreview').innerHTML = fullEmailHtml;
-      document.getElementById('codeOutput').textContent = fullEmailHtml;
-
-      // TEXT ONLY FORMAT
-      let textOnly = `SUJET : ${subject}\n\n`;
-      if (heading) textOnly += `${heading.toUpperCase()}\n${'='.repeat(heading.length)}\n\n`;
-      textOnly += `${intro}\n\n`;
-      if (checkedItems.length > 0) {
-        textOnly += `ÉLÉMENTS À FOURNIR / VALIDER :\n`;
-        checkedItems.forEach(item => { textOnly += ` [✓] ${item.label}\n`; });
-        textOnly += `\n`;
-      }
-      if (footerNote) textOnly += `${footerNote}\n\n`;
-      if (showCta && ctaText) textOnly += `Lien d'action : ${ctaText} -> ${ctaUrl}\n`;
-
-      document.getElementById('textOutput').value = textOnly;
-    }
-
-    // FONCTION POUR TÉLÉCHARGER DIRECTEMENT LE FICHIER HTML
-    function downloadHtmlFile() {
-      const htmlContent = document.getElementById('codeOutput').textContent;
-      const blob = new Blob([htmlContent], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'notification-email.html';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }
-
-    // TAB SWITCHING
-    function switchTab(tab) {
-      activeTab = tab;
-      
-      const visualEl = document.getElementById('visualPreview');
-      const codeEl = document.getElementById('codePreview');
-      const textEl = document.getElementById('textPreview');
-      
-      const btnPreview = document.getElementById('tabPreviewBtn');
-      const btnCode = document.getElementById('tabCodeBtn');
-      const btnText = document.getElementById('tabTextBtn');
-
-      visualEl.classList.add('hidden');
-      codeEl.classList.add('hidden');
-      textEl.classList.add('hidden');
-
-      [btnPreview, btnCode, btnText].forEach(btn => {
-        btn.className = "px-3 py-1.5 text-xs font-semibold rounded-md text-slate-600 hover:text-slate-900 transition";
-      });
-
-      if (tab === 'preview') {
-        visualEl.classList.remove('hidden');
-        btnPreview.className = "px-3 py-1.5 text-xs font-semibold rounded-md bg-white text-slate-900 shadow-sm transition";
-        document.getElementById('copyBtnText').innerText = "Copier le code HTML";
-      } else if (tab === 'code') {
-        codeEl.classList.remove('hidden');
-        btnCode.className = "px-3 py-1.5 text-xs font-semibold rounded-md bg-white text-slate-900 shadow-sm transition";
-        document.getElementById('copyBtnText').innerText = "Copier le code HTML";
-      } else if (tab === 'text') {
-        textEl.classList.remove('hidden');
-        btnText.className = "px-3 py-1.5 text-xs font-semibold rounded-md bg-white text-slate-900 shadow-sm transition";
-        document.getElementById('copyBtnText').innerText = "Copier le Texte Brut";
-      }
-    }
-
-    function copyCurrentOutput() {
-      let contentToCopy = '';
-      if (activeTab === 'text') {
-        contentToCopy = document.getElementById('textOutput').value;
-      } else {
-        contentToCopy = document.getElementById('codeOutput').textContent;
-      }
-
-      navigator.clipboard.writeText(contentToCopy).then(() => {
-        const btnText = document.getElementById('copyBtnText');
-        const origText = btnText.innerText;
-        btnText.innerText = "Copié !";
-        setTimeout(() => { btnText.innerText = origText; }, 2000);
-      });
-    }
-
-    // MODAL TOGGLER
-    function toggleModal(modalId, show) {
-      const modal = document.getElementById(modalId);
-      if (show) {
-        modal.classList.remove('hidden');
-        if (modalId === 'templateManagerModal') renderDbManagerList();
-      } else {
-        modal.classList.add('hidden');
-      }
-    }
-
-    // BDD MODAL MANAGER FUNCTIONS
-    function renderDbManagerList() {
-      const container = document.getElementById('templateListDb');
-      container.innerHTML = currentTemplates.map(t => `
-        <div class="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg">
-          <div>
-            <h5 class="font-semibold text-sm text-slate-800">${t.name}</h5>
-            <p class="text-xs text-slate-500">${t.items ? t.items.length : 0} éléments à cocher</p>
-          </div>
-          <div class="flex gap-2">
-            <button onclick="editTemplateInForm('${t.id}')" class="px-2.5 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded font-medium">Éditer</button>
-            <button onclick="deleteTemplateFromDb('${t.id}')" class="px-2.5 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded font-medium">Supprimer</button>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    function resetTemplateForm() {
-      document.getElementById('editTemplateId').value = '';
-      document.getElementById('editTemplateName').value = '';
-      document.getElementById('editTemplateSubject').value = '';
-      document.getElementById('editTemplateHeading').value = '';
-      document.getElementById('editTemplateItems').value = '';
-      document.getElementById('editorTitle').innerText = 'Créer un nouveau type de courriel';
-    }
-
-    function editTemplateInForm(id) {
-      const t = currentTemplates.find(item => item.id === id);
-      if (!t) return;
-
-      document.getElementById('editTemplateId').value = t.id;
-      document.getElementById('editTemplateName').value = t.name;
-      document.getElementById('editTemplateSubject').value = t.subject || '';
-      document.getElementById('editTemplateHeading').value = t.heading || '';
-      document.getElementById('editTemplateItems').value = (t.items || []).map(i => i.label).join('\n');
-      document.getElementById('editorTitle').innerText = 'Modifier le modèle : ' + t.name;
-    }
-
-    function saveTemplateToDb() {
-      const id = document.getElementById('editTemplateId').value || 'tpl-' + Date.now();
-      const name = document.getElementById('editTemplateName').value.trim();
-      const subject = document.getElementById('editTemplateSubject').value.trim();
-      const heading = document.getElementById('editTemplateHeading').value.trim();
-      const rawItems = document.getElementById('editTemplateItems').value.split('\n').filter(i => i.trim() !== '');
-
-      if (!name) { alert('Merci de préciser un nom pour ce type de courriel.'); return; }
-
-      const itemsFormatted = rawItems.map((lbl, idx) => ({
-        id: 'item-' + idx,
-        label: lbl.trim(),
-        checked: true
-      }));
-
-      const existingIndex = currentTemplates.findIndex(t => t.id === id);
-      const newTemplateObj = {
-        id,
-        name,
-        subject,
-        heading,
-        intro: 'Bonjour,\n\nMerci de prendre connaissance des informations ci-dessous :',
-        items: itemsFormatted,
-        footerNote: 'Restant à votre disposition pour tout renseignement complémentaire.',
-        badge: 'info',
-        color: 'blue'
-      };
-
-      if (existingIndex >= 0) {
-        currentTemplates[existingIndex] = newTemplateObj;
-      } else {
-        currentTemplates.push(newTemplateObj);
-      }
-
-      saveDatabase();
-      resetTemplateForm();
-      loadTemplate(id);
-      document.getElementById('templateSelect').value = id;
-    }
-
-    function deleteTemplateFromDb(id) {
-      if (currentTemplates.length <= 1) {
-        alert('Impossible de supprimer le dernier modèle disponible.');
-        return;
-      }
-      if (confirm('Voulez-vous vraiment supprimer ce modèle de la BDD ?')) {
-        currentTemplates = currentTemplates.filter(t => t.id !== id);
-        saveDatabase();
-        loadTemplate(currentTemplates[0].id);
-      }
-    }
-
-    // AI REWRITE ASSISTANT (SIMULATED FOR FRONTEND DEMO)
-    function openAiAssist(targetField) {
-      currentAiTargetField = targetField;
-      let originalText = '';
-      
-      if (targetField === 'title') {
-        originalText = document.getElementById('emailHeading').value;
-      } else if (targetField === 'intro') {
-        originalText = document.getElementById('emailIntro').value;
-      }
-
-      document.getElementById('aiOriginalText').innerText = originalText || '(Aucun texte saisi)';
-      document.getElementById('aiResultText').innerHTML = '<em>Cliquez sur "Générer la reformulation"...</em>';
-      toggleModal('aiModal', true);
-    }
-
-    function selectAiTone(tone) {
-      currentAiTone = tone;
-      document.querySelectorAll('.ai-tone-btn').forEach(btn => {
-        btn.className = "ai-tone-btn px-3 py-2 border text-xs rounded-lg text-left font-medium border-slate-200 hover:border-slate-300";
-      });
-      event.currentTarget.className = "ai-tone-btn active px-3 py-2 border text-xs rounded-lg text-left font-medium border-purple-500 bg-purple-50 text-purple-700";
-    }
-
-    function generateAiSuggestion() {
-      const orig = document.getElementById('aiOriginalText').innerText;
-      const resContainer = document.getElementById('aiResultText');
-      
-      resContainer.innerHTML = '<span class="text-purple-600 animate-pulse"><i class="fa-solid fa-spinner fa-spin"></i> Reformulation en cours...</span>';
-
-      setTimeout(() => {
-        let rewritten = '';
-        if (currentAiTone === 'clear') {
-          rewritten = orig.length > 5 ? "Rappel urgent : " + orig.replace(/Bonjour,?\s*/i, '') : "Mise à jour urgente requise pour votre dossier.";
-        } else if (currentAiTone === 'urgent') {
-          rewritten = "🚨 DÉLAI DÉPASSÉ : " + orig + " Merci de régulariser sous 24h.";
-        } else if (currentAiTone === 'formal') {
-          rewritten = "Nous vous prions de bien vouloir prendre connaissance de la demande suivante : " + orig;
-        } else {
-          rewritten = "Bonjour ! Un petit rappel amical concernant : " + orig;
+            initSortable();
+        };
+
+        window.openConfigModal = function() {
+            document.getElementById('config-modal').classList.remove('hidden');
+            const current = localStorage.getItem('duo_firebase_config');
+            if (current) document.getElementById('config-json-input').value = current;
         }
 
-        resContainer.innerText = rewritten;
-      }, 700);
-    }
+        window.closeConfigModal = function() {
+            document.getElementById('config-modal').classList.add('hidden');
+        }
 
-    function applyAiSuggestion() {
-      const suggestedText = document.getElementById('aiResultText').innerText;
-      if (!suggestedText || suggestedText.includes('Reformulation en cours')) return;
+        window.saveConfig = function() {
+            const val = document.getElementById('config-json-input').value.trim();
+            try {
+                const configObj = JSON.parse(val);
+                localStorage.setItem('duo_firebase_config', JSON.stringify(configObj));
+                closeConfigModal();
+                initFirebase(configObj);
+            } catch(e) {
+                alert("Format JSON invalide.");
+            }
+        }
 
-      if (currentAiTargetField === 'title') {
-        document.getElementById('emailHeading').value = suggestedText;
-      } else if (currentAiTargetField === 'intro') {
-        document.getElementById('emailIntro').value = suggestedText;
-      }
+        function initFirebase(config) {
+            try {
+                const app = initializeApp(config);
+                db = getFirestore(app);
+                const auth = getAuth(app);
+                signInAnonymously(auth).then(() => {
+                    document.getElementById('sync-status').className = "flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium border border-emerald-200";
+                    document.getElementById('sync-text').innerText = "Connecté & Synchronisé";
+                    setupListeners();
+                }).catch(err => alert("Erreur d'authentification : " + err.message));
+            } catch (e) {
+                alert("Erreur d'initialisation : " + e.message);
+            }
+        }
 
-      updatePreview();
-      toggleModal('aiModal', false);
-    }
-  </script>
+        function setupListeners() {
+            ['inbox', 'recurring', 'contact', 'training', 'todo', 'project', 'it', 'history'].forEach(colName => {
+                onSnapshot(collection(db, colName), (snapshot) => {
+                    let items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    items.sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+                    localData[colName] = items;
+                    renderAll();
+                }, (error) => console.error("Erreur sync " + colName, error));
+            });
+        }
+
+        function initSortable() {
+            const collections = ['todo', 'recurring', 'project', 'contact', 'training', 'it'];
+            collections.forEach(col => {
+                const el = document.getElementById(`${col}-list`);
+                if (!el) return;
+                sortableInstances[col] = new Sortable(el, {
+                    handle: '.drag-handle',
+                    animation: 150,
+                    ghostClass: 'ghost-card',
+                    onEnd: async function () {
+                        const newOrderIds = Array.from(el.children).map(child => child.getAttribute('data-id')).filter(Boolean);
+                        newOrderIds.forEach((id, index) => {
+                            let item = localData[col].find(x => x.id === id);
+                            if (item) item.order = index;
+                            if (db) {
+                                updateDoc(doc(db, col, id), { order: index });
+                            }
+                        });
+                        localData[col].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+                    }
+                });
+            });
+        }
+
+        window.handleInboxSubmit = async function(e) {
+            e.preventDefault();
+            const input = document.getElementById('inbox-input');
+            const val = input.value.trim();
+            if(!val) return;
+
+            let target = 'todo';
+            const lower = val.toLowerCase();
+            if(lower.includes('form') || lower.includes('travailleur') || lower.includes('vérif')) target = 'training';
+            else if(lower.includes('contact') || lower.includes('appel') || lower.includes('email') || lower.includes('teams')) target = 'contact';
+            else if(lower.includes('it') || lower.includes('bug') || lower.includes('ordi')) target = 'it';
+            else if(lower.includes('projet')) target = 'project';
+            else if(lower.includes('tous les') || lower.includes('chaque')) target = 'recurring';
+
+            if(db) {
+                await addDoc(collection(db, 'inbox'), { text: val, suggested: target, timestamp: Date.now(), assignee: 'Non assigné' });
+            } else {
+                localData.inbox.push({ id: 'local_' + Math.random(), text: val, suggested: target, assignee: 'Non assigné' });
+                renderAll();
+            }
+            input.value = '';
+        }
+
+        window.triageItem = async function(id, text, selectedTarget) {
+            let maxOrder = localData[selectedTarget].length;
+            let payload = { title: text, completed: false, order: maxOrder, assignee: 'Non assigné' };
+            
+            if(selectedTarget === 'contact') payload = { title: text, channel: 'Teams', message: '', dueDate: '', status: 'À contacter', order: maxOrder, assignee: 'Non assigné' };
+            else if(selectedTarget === 'training') payload = { workerName: text, completed: false, order: maxOrder, assignee: 'Non assigné' };
+            else if(selectedTarget === 'it') payload = { title: text, status: 'À transmettre', notes: '', order: maxOrder, assignee: 'Non assigné' };
+            else if(selectedTarget === 'project') payload = { title: text, progress: 0, deadline: '', subtasks: [], order: maxOrder, assignee: 'Non assigné' };
+            else if(selectedTarget === 'recurring') payload = { title: text, frequency: 'Quotidienne', lastDone: '', order: maxOrder, assignee: 'Non assigné' };
+            else if(selectedTarget === 'todo') payload = { title: text, dueDate: '', order: maxOrder, assignee: 'Non assigné' };
+
+            if(db) {
+                await addDoc(collection(db, selectedTarget), payload);
+                await deleteDoc(doc(db, 'inbox', id));
+            } else {
+                localData.inbox = localData.inbox.filter(x => x.id !== id);
+                localData[selectedTarget].push({ id: 'local_' + Math.random(), ...payload });
+                renderAll();
+            }
+        }
+
+        window.completeRecurringItem = async function(id) {
+            const todayStr = new Date().toLocaleDateString('fr-FR');
+            if(db) {
+                await updateDoc(doc(db, 'recurring', id), { lastDone: todayStr });
+            } else {
+                let item = localData.recurring.find(x => x.id === id);
+                if(item) item.lastDone = todayStr;
+                renderAll();
+            }
+        }
+
+        window.resetRecurringItem = async function(id) {
+            if(db) {
+                await updateDoc(doc(db, 'recurring', id), { lastDone: '' });
+            } else {
+                let item = localData.recurring.find(x => x.id === id);
+                if(item) item.lastDone = '';
+                renderAll();
+            }
+        }
+
+        window.completeItem = async function(col, id, titleOrWorker) {
+            if(db) {
+                await addDoc(collection(db, 'history'), {
+                    title: titleOrWorker,
+                    originalCol: col,
+                    completedAt: new Date().toLocaleDateString('fr-FR')
+                });
+                await deleteDoc(doc(db, col, id));
+            } else {
+                localData[col] = localData[col].filter(x => x.id !== id);
+                localData.history.push({
+                    id: 'local_' + Math.random(),
+                    title: titleOrWorker,
+                    originalCol: col,
+                    completedAt: new Date().toLocaleDateString('fr-FR')
+                });
+                renderAll();
+            }
+        }
+
+        window.deleteItem = async function(col, id) {
+            if(db) await deleteDoc(doc(db, col, id));
+            else {
+                localData[col] = localData[col].filter(x => x.id !== id);
+                renderAll();
+            }
+        }
+
+        window.addSubtask = async function(projId) {
+            const text = prompt("Titre de la nouvelle sous-tâche :");
+            if(!text) return;
+            const proj = localData.project.find(p => p.id === projId);
+            if(!proj) return;
+
+            const subtasks = proj.subtasks || [];
+            subtasks.push({ id: 'sub_' + Date.now(), title: text, done: false });
+            
+            const doneCount = subtasks.filter(s => s.done).length;
+            const progress = Math.round((doneCount / subtasks.length) * 100);
+
+            if(db) {
+                await updateDoc(doc(db, 'project', projId), { subtasks, progress });
+            } else {
+                proj.subtasks = subtasks;
+                proj.progress = progress;
+                renderAll();
+            }
+        }
+
+        window.toggleSubtask = async function(projId, subId) {
+            const proj = localData.project.find(p => p.id === projId);
+            if(!proj || !proj.subtasks) return;
+
+            const subtasks = proj.subtasks.map(s => s.id === subId ? { ...s, done: !s.done } : s);
+            const doneCount = subtasks.filter(s => s.done).length;
+            const progress = Math.round((doneCount / subtasks.length) * 100);
+
+            if(db) {
+                await updateDoc(doc(db, 'project', projId), { subtasks, progress });
+            } else {
+                proj.subtasks = subtasks;
+                proj.progress = progress;
+                renderAll();
+            }
+        }
+
+        window.checkAssigneeCustom = function(val) {
+            const customContainer = document.getElementById('custom-assignee-container');
+            if (val === 'custom') {
+                customContainer.classList.remove('hidden');
+                document.getElementById('m-custom-assignee').focus();
+            } else {
+                customContainer.classList.add('hidden');
+            }
+        }
+
+        window.openModal = function(type, editId = null) {
+            document.getElementById('universal-modal').classList.remove('hidden');
+            document.getElementById('modal-type').value = type;
+            document.getElementById('modal-edit-id').value = editId || '';
+            const container = document.getElementById('extra-field-container');
+            container.innerHTML = '';
+
+            let existing = editId ? localData[type].find(x => x.id === editId) : null;
+            document.getElementById('m-title-label').innerText = type === 'training' ? "Nom du travailleur" : "Intitulé / Titre";
+            document.getElementById('m-title').value = existing ? (existing.title || existing.workerName || '') : '';
+            
+            const assigneeSelect = document.getElementById('m-assignee');
+            const customContainer = document.getElementById('custom-assignee-container');
+            const customInput = document.getElementById('m-custom-assignee');
+
+            const currentAssignee = existing?.assignee || 'Non assigné';
+            if (['Non assigné', 'Mickaela', 'Koloina', 'Les deux'].includes(currentAssignee)) {
+                assigneeSelect.value = currentAssignee;
+                customContainer.classList.add('hidden');
+                customInput.value = '';
+            } else {
+                assigneeSelect.value = 'custom';
+                customContainer.classList.remove('hidden');
+                customInput.value = currentAssignee;
+            }
+
+            if(type === 'contact') {
+                document.getElementById('modal-title').innerText = editId ? "Modifier le contact" : "Ajouter un contact";
+                container.innerHTML = `
+                    <div class="mt-2"><label class="block text-xs font-semibold text-slate-600 mb-1">Canal</label>
+                    <select id="m-channel" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"><option ${existing?.channel==='Teams'?'selected':''}>Teams</option><option ${existing?.channel==='Téléphone'?'selected':''}>Téléphone</option><option ${existing?.channel==='Courriel'?'selected':''}>Courriel</option></select></div>
+                    <div class="mt-2"><label class="block text-xs font-semibold text-slate-600 mb-1">Date de rappel / suivi</label><input type="date" id="m-duedate" value="${existing?.dueDate || ''}" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"></div>
+                    <div class="mt-2"><label class="block text-xs font-semibold text-slate-600 mb-1">Message / Notes</label><input type="text" id="m-message" value="${existing?.message || ''}" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"></div>
+                `;
+            } else if(type === 'todo') {
+                document.getElementById('modal-title').innerText = editId ? "Modifier la To-Do" : "Ajouter une To-Do";
+                container.innerHTML = `
+                    <div class="mt-2"><label class="block text-xs font-semibold text-slate-600 mb-1">Date d'échéance</label><input type="date" id="m-duedate" value="${existing?.dueDate || ''}" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"></div>
+                `;
+            } else if(type === 'recurring') {
+                document.getElementById('modal-title').innerText = editId ? "Modifier la tâche récurrente" : "Nouvelle tâche récurrente";
+                container.innerHTML = `
+                    <div class="mt-2"><label class="block text-xs font-semibold text-slate-600 mb-1">Fréquence</label>
+                    <select id="m-frequency" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+                        <option ${existing?.frequency==='Quotidienne'?'selected':''}>Quotidienne</option>
+                        <option ${existing?.frequency==='Hebdomadaire'?'selected':''}>Hebdomadaire</option>
+                        <option ${existing?.frequency==='Mensuelle'?'selected':''}>Mensuelle</option>
+                    </select></div>
+                `;
+            } else if(type === 'training') {
+                document.getElementById('modal-title').innerText = editId ? "Modifier le travailleur" : "Ajouter un travailleur";
+            } else if(type === 'it') {
+                document.getElementById('modal-title').innerText = editId ? "Modifier la demande IT" : "Nouvelle demande IT";
+                container.innerHTML = `<div class="mt-2"><label class="block text-xs font-semibold text-slate-600 mb-1">Notes de suivi</label><input type="text" id="m-notes" value="${existing?.notes || ''}" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"></div>`;
+            } else if(type === 'project') {
+                document.getElementById('modal-title').innerText = editId ? "Modifier le projet" : "Nouveau Projet";
+                container.innerHTML = `
+                    <div class="mt-2"><label class="block text-xs font-semibold text-slate-600 mb-1">Date Limite (Deadline)</label><input type="date" id="m-deadline" value="${existing?.deadline || ''}" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"></div>
+                `;
+            } else {
+                document.getElementById('modal-title').innerText = editId ? "Modifier l'élément" : "Ajouter un élément";
+            }
+        }
+
+        window.closeModalWindow = function() {
+            document.getElementById('universal-modal').classList.add('hidden');
+            document.getElementById('m-title').value = '';
+            document.getElementById('modal-edit-id').value = '';
+        }
+
+        window.handleUniversalSubmit = async function(e) {
+            e.preventDefault();
+            const type = document.getElementById('modal-type').value;
+            const editId = document.getElementById('modal-edit-id').value;
+            const titleVal = document.getElementById('m-title').value;
+            
+            let assigneeVal = document.getElementById('m-assignee').value;
+            if (assigneeVal === 'custom') {
+                assigneeVal = document.getElementById('m-custom-assignee').value.trim() || 'Non assigné';
+            }
+
+            let payload = { assignee: assigneeVal };
+            if(type === 'training') payload.workerName = titleVal;
+            else payload.title = titleVal;
+
+            if(type === 'contact') {
+                payload.channel = document.getElementById('m-channel').value;
+                payload.dueDate = document.getElementById('m-duedate')?.value || '';
+                payload.message = document.getElementById('m-message').value;
+            } else if(type === 'todo') {
+                payload.dueDate = document.getElementById('m-duedate')?.value || '';
+            } else if(type === 'recurring') {
+                payload.frequency = document.getElementById('m-frequency').value;
+                if(!editId) payload.lastDone = '';
+            } else if(type === 'it') {
+                payload.notes = document.getElementById('m-notes').value || '';
+            } else if(type === 'project') {
+                payload.deadline = document.getElementById('m-deadline').value || '';
+            }
+
+            if(db) {
+                if(editId) {
+                    await updateDoc(doc(db, type, editId), payload);
+                } else {
+                    payload.order = localData[type].length;
+                    if(type === 'project') { payload.progress = 0; payload.subtasks = []; }
+                    await addDoc(collection(db, type), payload);
+                }
+            } else {
+                if(editId) {
+                    let idx = localData[type].findIndex(x => x.id === editId);
+                    if(idx !== -1) localData[type][idx] = { ...localData[type][idx], ...payload };
+                } else {
+                    payload.order = localData[type].length;
+                    localData[type].push({ id: 'local_' + Math.random(), ...payload });
+                }
+                renderAll();
+            }
+            closeModalWindow();
+        }
+
+        function getAssigneeBadge(assignee) {
+            if (!assignee || assignee === 'Non assigné') return '';
+            let color = 'bg-slate-100 text-slate-600 border-slate-200';
+            if (assignee === 'Mickaela') color = 'bg-indigo-50 text-indigo-700 border-indigo-200';
+            else if (assignee === 'Koloina') color = 'bg-purple-50 text-purple-700 border-purple-200';
+            else if (assignee === 'Les deux') color = 'bg-amber-50 text-amber-700 border-amber-200';
+
+            return `<span class="px-1.5 py-0.5 text-[10px] font-semibold rounded-md border ${color} shrink-0">👤 ${assignee}</span>`;
+        }
+
+        function getDateBadge(dateStr) {
+            if (!dateStr) return '';
+            const today = new Date().toISOString().slice(0,10);
+            if (dateStr < today) {
+                return `<span class="px-1.5 py-0.5 bg-rose-100 text-rose-700 rounded text-[10px] font-bold shrink-0">⚠️ ${dateStr}</span>`;
+            }
+            return `<span class="px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded text-[10px] shrink-0">🗓️ ${dateStr}</span>`;
+        }
+
+        function renderAll() {
+            const query = (document.getElementById('search-bar')?.value || '').toLowerCase();
+
+            // Inbox
+            const inboxEl = document.getElementById('inbox-list');
+            inboxEl.innerHTML = localData.inbox.length === 0 ? '<p class="text-xs text-slate-400 italic">Inbox vide. Tout est trié !</p>' : '';
+            localData.inbox.forEach(item => {
+                if(query && !item.text.toLowerCase().includes(query)) return;
+                const safeText = item.text.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                inboxEl.innerHTML += `
+                    <div class="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-xs gap-2" data-id="${item.id}">
+                        <span class="font-medium text-slate-700 flex-1">${item.text}</span>
+                        <div class="flex items-center space-x-1 shrink-0">
+                            <select id="target-${item.id}" class="text-[11px] py-1 px-1.5 bg-white border border-slate-200 rounded-lg">
+                                <option value="todo" ${item.suggested==='todo'?'selected':''}>To-Do</option>
+                                <option value="contact" ${item.suggested==='contact'?'selected':''}>À contacter</option>
+                                <option value="recurring" ${item.suggested==='recurring'?'selected':''}>Récurrentes</option>
+                                <option value="training" ${item.suggested==='training'?'selected':''}>Formations</option>
+                                <option value="project" ${item.suggested==='project'?'selected':''}>Projet</option>
+                                <option value="it" ${item.suggested==='it'?'selected':''}>Tableau IT</option>
+                            </select>
+                            <button onclick="triageItem('${item.id}', '${safeText}', document.getElementById('target-${item.id}').value)" class="px-2.5 py-1 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg font-medium transition">Trier →</button>
+                            <button onclick="deleteItem('inbox', '${item.id}')" class="p-1 text-slate-400 hover:text-rose-600"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Formations
+            const trainEl = document.getElementById('training-list');
+            trainEl.innerHTML = localData.training.length === 0 ? '<p class="text-xs text-slate-400 italic">Aucun travailleur à vérifier.</p>' : '';
+            localData.training.forEach(item => {
+                if(query && !item.workerName.toLowerCase().includes(query)) return;
+                const safeWorker = item.workerName.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                trainEl.innerHTML += `
+                    <div class="flex items-start justify-between p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-xs gap-2" data-id="${item.id}">
+                        <div class="flex items-start space-x-2 flex-1">
+                            <span class="drag-handle text-slate-300 hover:text-slate-500 font-bold px-0.5 mt-0.5">⋮⋮</span>
+                            <div class="w-2 h-2 rounded-full bg-purple-500 mt-1.5 shrink-0"></div>
+                            <div class="flex flex-wrap items-center gap-1.5 flex-1">
+                                <span class="font-bold text-slate-800">${item.workerName}</span>
+                                ${getAssigneeBadge(item.assignee)}
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-1 shrink-0">
+                            <button onclick="openModal('training', '${item.id}')" class="p-1 text-slate-400 hover:text-indigo-600"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
+                            <button onclick="completeItem('training', '${item.id}', '${safeWorker}')" class="px-2 py-1 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg font-medium text-[11px]">Validé ✓</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Contact (Avec date de rappel)
+            const contactEl = document.getElementById('contact-list');
+            contactEl.innerHTML = localData.contact.length === 0 ? '<p class="text-xs text-slate-400 italic">Aucun contact en attente.</p>' : '';
+            localData.contact.forEach(item => {
+                if(query && !item.title.toLowerCase().includes(query)) return;
+                const safeTitle = item.title.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                contactEl.innerHTML += `
+                    <div class="p-3 bg-slate-50 border border-slate-100 rounded-xl text-xs space-y-1.5" data-id="${item.id}">
+                        <div class="flex items-start justify-between font-semibold text-slate-800 gap-2">
+                            <div class="flex items-start space-x-2 flex-1">
+                                <span class="drag-handle text-slate-300 hover:text-slate-500 font-bold px-0.5 mt-0.5">⋮⋮</span>
+                                <div class="flex flex-wrap items-center gap-1.5 flex-1">
+                                    <span>${item.title}</span>
+                                    ${getAssigneeBadge(item.assignee)}
+                                    ${getDateBadge(item.dueDate)}
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-1 shrink-0">
+                                <span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-md text-[10px]">${item.channel}</span>
+                                <button onclick="openModal('contact', '${item.id}')" class="p-1 text-slate-400 hover:text-indigo-600"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
+                            </div>
+                        </div>
+                        ${item.message ? `<p class="text-slate-500 italic pl-5">"${item.message}"</p>` : ''}
+                        <div class="flex justify-end pt-1">
+                            <button onclick="completeItem('contact', '${item.id}', '${safeTitle}')" class="text-emerald-600 font-semibold hover:underline text-[11px]">Terminé ✓</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Projets
+            const projEl = document.getElementById('project-list');
+            projEl.innerHTML = localData.project.length === 0 ? '<p class="text-xs text-slate-400 italic">Aucun projet en cours.</p>' : '';
+            localData.project.forEach(item => {
+                if(query && !item.title.toLowerCase().includes(query)) return;
+                const safeTitle = item.title.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                const subtasks = item.subtasks || [];
+                
+                projEl.innerHTML += `
+                    <div class="p-3.5 bg-slate-50 border border-slate-100 rounded-xl text-xs space-y-2.5" data-id="${item.id}">
+                        <div class="flex items-start justify-between font-bold text-slate-800 gap-2">
+                            <div class="flex items-start space-x-2 flex-1">
+                                <span class="drag-handle text-slate-300 hover:text-slate-500 font-bold px-0.5 mt-0.5">⋮⋮</span>
+                                <div class="flex flex-wrap items-center gap-1.5 flex-1">
+                                    <span class="text-sm">${item.title}</span>
+                                    ${getAssigneeBadge(item.assignee)}
+                                    ${getDateBadge(item.deadline)}
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-1 shrink-0">
+                                <button onclick="openModal('project', '${item.id}')" class="p-1 text-slate-400 hover:text-indigo-600"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
+                                <button onclick="completeItem('project', '${item.id}', '${safeTitle}')" class="p-1 text-emerald-600 hover:text-emerald-700"><i data-lucide="check-circle" class="w-4 h-4"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-[10px] text-slate-500">
+                                <span>Progression</span>
+                                <span class="font-bold text-cyan-600">${item.progress || 0}%</span>
+                            </div>
+                            <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                                <div class="bg-cyan-500 h-full rounded-full transition-all duration-300" style="width: ${item.progress || 0}%"></div>
+                            </div>
+                        </div>
+
+                        <div class="pt-1 space-y-1.5 border-t border-slate-200/60">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[10px] font-bold text-slate-500 uppercase">Sous-tâches (${subtasks.filter(s=>s.done).length}/${subtasks.length})</span>
+                                <button onclick="addSubtask('${item.id}')" class="text-[11px] text-indigo-600 font-medium hover:underline">+ Sous-tâche</button>
+                            </div>
+                            ${subtasks.map(s => `
+                                <div class="flex items-center space-x-2 text-[11px]">
+                                    <input type="checkbox" ${s.done ? 'checked' : ''} onclick="toggleSubtask('${item.id}', '${s.id}')" class="w-3.5 h-3.5 text-cyan-600 rounded">
+                                    <span class="${s.done ? 'line-through text-slate-400' : 'text-slate-700'}">${s.title}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Tâches Récurrentes
+            const recEl = document.getElementById('recurring-list');
+            recEl.innerHTML = localData.recurring.length === 0 ? '<p class="text-xs text-slate-400 italic">Aucune tâche récurrente.</p>' : '';
+            localData.recurring.forEach(item => {
+                if(query && !item.title.toLowerCase().includes(query)) return;
+                const todayStr = new Date().toLocaleDateString('fr-FR');
+                const isDoneToday = item.lastDone === todayStr;
+
+                recEl.innerHTML += `
+                    <div class="flex items-start justify-between p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-xs gap-2" data-id="${item.id}">
+                        <div class="flex items-start space-x-2.5 flex-1">
+                            <span class="drag-handle text-slate-300 hover:text-slate-500 font-bold px-0.5 mt-0.5">⋮⋮</span>
+                            <button onclick="completeRecurringItem('${item.id}')" class="w-4 h-4 mt-0.5 flex items-center justify-center rounded border shrink-0 ${isDoneToday ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 bg-white'}">
+                                ${isDoneToday ? '✓' : ''}
+                            </button>
+                            <div class="flex flex-wrap items-center gap-1.5 flex-1">
+                                <span class="font-medium ${isDoneToday ? 'line-through text-slate-400' : 'text-slate-700'}">${item.title}</span>
+                                <span class="px-1.5 py-0.5 text-[9px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 rounded shrink-0">🔄 ${item.frequency || 'Quotidienne'}</span>
+                                ${getAssigneeBadge(item.assignee)}
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-1 shrink-0">
+                            ${item.lastDone ? `<span class="text-[10px] text-slate-400 mr-1 hidden sm:inline">Fait le ${item.lastDone}</span>` : ''}
+                            <button onclick="resetRecurringItem('${item.id}')" title="Rafraîchir / Relancer la tâche" class="p-1 text-slate-400 hover:text-emerald-600"><i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i></button>
+                            <button onclick="openModal('recurring', '${item.id}')" class="p-1 text-slate-400 hover:text-indigo-600"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
+                            <button onclick="deleteItem('recurring', '${item.id}')" class="p-1 text-slate-400 hover:text-rose-600"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            // To-Do (Avec date d'échéance)
+            const todoEl = document.getElementById('todo-list');
+            todoEl.innerHTML = localData.todo.length === 0 ? '<p class="text-xs text-slate-400 italic">Rien pour le moment.</p>' : '';
+            localData.todo.forEach(item => {
+                if(query && !item.title.toLowerCase().includes(query)) return;
+                const safeTitle = item.title.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                todoEl.innerHTML += `
+                    <div class="flex items-start justify-between p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-xs gap-2" data-id="${item.id}">
+                        <div class="flex items-start space-x-2.5 flex-1">
+                            <span class="drag-handle text-slate-300 hover:text-slate-500 font-bold px-0.5 mt-0.5">⋮⋮</span>
+                            <input type="checkbox" onclick="completeItem('todo', '${item.id}', '${safeTitle}')" class="w-4 h-4 mt-0.5 text-indigo-600 rounded border-slate-300 shrink-0">
+                            <div class="flex flex-wrap items-center gap-1.5 flex-1">
+                                <span class="font-medium text-slate-700">${item.title}</span>
+                                ${getAssigneeBadge(item.assignee)}
+                                ${getDateBadge(item.dueDate)}
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-1 shrink-0">
+                            <button onclick="openModal('todo', '${item.id}')" class="p-1 text-slate-400 hover:text-indigo-600"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
+                            <button onclick="deleteItem('todo', '${item.id}')" class="p-1 text-slate-400 hover:text-rose-600"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            // IT
+            const itEl = document.getElementById('it-list');
+            itEl.innerHTML = localData.it.length === 0 ? '<p class="text-xs text-slate-400 italic">Aucune demande IT.</p>' : '';
+            localData.it.forEach(item => {
+                if(query && !item.title.toLowerCase().includes(query)) return;
+                const safeTitle = item.title.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                itEl.innerHTML += `
+                    <div class="p-3 bg-slate-800 border border-slate-700 rounded-xl text-xs space-y-1.5" data-id="${item.id}">
+                        <div class="flex items-start justify-between font-medium text-slate-200 gap-2">
+                            <div class="flex items-start space-x-2 flex-1">
+                                <span class="drag-handle text-slate-600 hover:text-slate-400 font-bold px-0.5 mt-0.5">⋮⋮</span>
+                                <div class="flex flex-wrap items-center gap-1.5 flex-1">
+                                    <span>${item.title}</span>
+                                    ${getAssigneeBadge(item.assignee)}
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-1 shrink-0">
+                                <button onclick="openModal('it', '${item.id}')" class="p-1 text-slate-400 hover:text-indigo-300"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
+                                <button onclick="completeItem('it', '${item.id}', '${safeTitle}')" class="p-1 text-emerald-400 hover:text-emerald-300"><i data-lucide="check" class="w-3.5 h-3.5"></i></button>
+                            </div>
+                        </div>
+                        ${item.notes ? `<p class="text-slate-400 text-[11px] pl-5">Suivi : ${item.notes}</p>` : ''}
+                    </div>
+                `;
+            });
+
+            // Historique
+            const histEl = document.getElementById('history-list');
+            document.getElementById('history-count').innerText = localData.history.length;
+            histEl.innerHTML = localData.history.length === 0 ? '<p class="text-xs text-slate-400 italic">Aucun élément archivé.</p>' : '';
+            localData.history.forEach(item => {
+                histEl.innerHTML += `
+                    <div class="flex items-center justify-between p-2 bg-slate-50 rounded-lg text-xs">
+                        <div class="flex items-center space-x-2">
+                            <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-500"></i>
+                            <span class="line-through text-slate-500">${item.title}</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-[10px] text-slate-400">${item.completedAt}</span>
+                            <button onclick="deleteItem('history', '${item.id}')" class="text-slate-300 hover:text-rose-500"><i data-lucide="trash-2" class="w-3 h-3"></i></button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            lucide.createIcons();
+        }
+
+        // EXPORTATION EXCEL (CSV)
+        window.exportToExcel = function() {
+            let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+            csvContent += "Module;Intitulé / Travailleur;Responsable;Date / Échéance;Détail;Statut\n";
+
+            localData.inbox.forEach(item => csvContent += `Inbox;"${item.text.replace(/"/g, '""')}";"${item.assignee || 'Non assigné'}";"-";"Suggéré: ${item.suggested}";En attente\n`);
+            localData.todo.forEach(item => csvContent += `To-Do;"${item.title.replace(/"/g, '""')}";"${item.assignee || 'Non assigné'}";"${item.dueDate || 'Aucune'}";"-";En cours\n`);
+            localData.contact.forEach(item => csvContent += `Contact;"${item.title.replace(/"/g, '""')}";"${item.assignee || 'Non assigné'}";"${item.dueDate || 'Aucune'}";"Canal: ${item.channel} | ${item.message || ''}";À contacter\n`);
+            localData.recurring.forEach(item => csvContent += `Récurrentes;"${item.title.replace(/"/g, '""')}";"${item.assignee || 'Non assigné'}";"-";"Fréquence: ${item.frequency || 'Quotidienne'}";Actif\n`);
+            localData.training.forEach(item => csvContent += `Formations;"${item.workerName.replace(/"/g, '""')}";"${item.assignee || 'Non assigné'}";"-";"Groupe unique";À vérifier\n`);
+            localData.project.forEach(item => csvContent += `Projets;"${item.title.replace(/"/g, '""')}";"${item.assignee || 'Non assigné'}";"${item.deadline || 'Aucune'}";"Progression: ${item.progress}%";En cours\n`);
+            localData.it.forEach(item => csvContent += `IT;"${item.title.replace(/"/g, '""')}";"${item.assignee || 'Non assigné'}";"-";"Notes: ${item.notes || ''}";En cours\n`);
+            localData.history.forEach(item => csvContent += `Historique;"${item.title.replace(/"/g, '""')}";"-";"Fait le: ${item.completedAt}";"-";Terminé\n`);
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `DuoSync_Export_${new Date().toISOString().slice(0, 10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
 </body>
 </html>
