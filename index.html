@@ -46,7 +46,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
       <div class="flex items-center space-x-3">
         <div class="bg-brand-600 p-2 rounded-lg text-white">
-          <i class="fa-solid me-0 fa-envelope-open-text text-xl"></i>
+          <i class="fa-solid fa-envelope-open-text text-xl"></i>
         </div>
         <div>
           <h1 class="font-bold text-lg leading-tight">Notification Mail Studio</h1>
@@ -199,7 +199,14 @@
         </div>
 
         <div class="flex items-center space-x-2">
-          <button onclick="copyCurrentOutput()" class="bg-brand-600 hover:bg-brand-700 text-white px-4 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 shadow-sm transition">
+          <!-- BOUTON DE TÉLÉCHARGEMENT DIRECT .HTML -->
+          <button onclick="downloadHtmlFile()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm transition" title="Télécharger le fichier .html pour Outlook">
+            <i class="fa-solid fa-download"></i>
+            <span>Télécharger .html</span>
+          </button>
+
+          <!-- BOUTON COPIER -->
+          <button onclick="copyCurrentOutput()" class="bg-brand-600 hover:bg-brand-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm transition">
             <i class="fa-solid fa-copy"></i>
             <span id="copyBtnText">Copier le code</span>
           </button>
@@ -616,6 +623,20 @@ ${intro}
       document.getElementById('textOutput').value = textOnly;
     }
 
+    // FONCTION POUR TÉLÉCHARGER DIRECTEMENT LE FICHIER HTML
+    function downloadHtmlFile() {
+      const htmlContent = document.getElementById('codeOutput').textContent;
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'notification-email.html';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
     // TAB SWITCHING
     function switchTab(tab) {
       activeTab = tab;
@@ -662,7 +683,7 @@ ${intro}
       navigator.clipboard.writeText(contentToCopy).then(() => {
         const btnText = document.getElementById('copyBtnText');
         const origText = btnText.innerText;
-        btnText.innerText = "Copié dans le presse-papiers !";
+        btnText.innerText = "Copié !";
         setTimeout(() => { btnText.innerText = origText; }, 2000);
       });
     }
