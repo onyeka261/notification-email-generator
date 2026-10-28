@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notification Studio — Gestionnaire de Courriels</title>
+    <title>Notification Studio — Studio Avancé</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
@@ -15,18 +15,17 @@
     <header class="bg-indigo-900 text-white shadow-md py-4 px-6 flex justify-between items-center z-10">
         <div class="flex items-center space-x-3">
             <div class="bg-indigo-700 p-2.5 rounded-xl shadow-inner">
-                <i class="fa-solid fa-envelope-open-text text-xl text-indigo-200"></i>
+                <i class="fa-solid fa-wand-magic-sparkles text-xl text-indigo-200"></i>
             </div>
             <div>
-                <h1 class="text-xl font-bold tracking-tight">Notification Studio</h1>
-                <p class="text-xs text-indigo-300">Modèles d'e-mails collaboratifs & multilingues</p>
+                <h1 class="text-xl font-bold tracking-tight">Notification Studio — Édition Avancée</h1>
+                <p class="text-xs text-indigo-300">Modèles, variables, options interactives & designs</p>
             </div>
         </div>
         <div class="flex items-center space-x-3">
-            <!-- Badge Synchro Cloud -->
             <div id="sync-badge" class="flex items-center space-x-2 bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 px-3 py-1.5 rounded-full text-xs font-medium shadow-sm">
                 <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span id="sync-text">Cloud Synchro</span>
+                <span>Cloud Synchro</span>
             </div>
             <button onclick="openNewModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-sm transition flex items-center space-x-2">
                 <i class="fa-solid fa-plus"></i>
@@ -38,7 +37,7 @@
     <!-- Corps principal -->
     <div class="flex-1 flex overflow-hidden">
         
-        <!-- Barre latérale : Liste des modèles -->
+        <!-- Barre latérale -->
         <aside class="w-80 bg-white border-r border-slate-200 flex flex-col shadow-sm">
             <div class="p-4 border-b border-slate-100 space-y-3">
                 <div class="relative">
@@ -47,7 +46,6 @@
                     </span>
                     <input type="text" id="search-input" oninput="filterTemplates()" placeholder="Rechercher un modèle..." class="w-full pl-9 pr-4 py-2 bg-slate-100 border-none rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 text-slate-700">
                 </div>
-                <!-- Filtres de langue -->
                 <div class="flex rounded-lg bg-slate-100 p-1 text-xs font-medium text-slate-600">
                     <button onclick="setLangFilter('ALL')" id="filter-all" class="flex-1 py-1 bg-white rounded-md shadow-xs text-indigo-600 font-semibold transition">Tous</button>
                     <button onclick="setLangFilter('FR')" id="filter-fr" class="flex-1 py-1 rounded-md transition">🇫🇷 FR</button>
@@ -56,24 +54,22 @@
             </div>
             
             <div id="templates-list" class="flex-1 overflow-y-auto divide-y divide-slate-100 p-2 space-y-1">
-                <!-- Généré dynamiquement -->
+                <!-- Rempli dynamiquement -->
             </div>
         </aside>
 
-        <!-- Zone principale d'édition et aperçu -->
+        <!-- Zone centrale -->
         <main class="flex-1 flex flex-col bg-slate-100 overflow-y-auto p-6">
             <div id="main-content" class="max-w-4xl w-full mx-auto space-y-6">
-                <!-- État par défaut si aucun modèle sélectionné -->
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-12 text-center text-slate-500">
                     <i class="fa-regular fa-folder-open text-4xl text-indigo-300 mb-3"></i>
                     <h2 class="text-lg font-semibold text-slate-700">Sélectionnez un modèle dans la liste</h2>
-                    <p class="text-sm mt-1">Ou créez un nouveau modèle de notification collaboratif.</p>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- Modal d'édition / création -->
+    <!-- Modal d'édition complet -->
     <div id="template-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
         <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden">
             <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
@@ -84,23 +80,33 @@
                 <input type="hidden" id="edit-id">
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Nom du modèle (Interne)</label>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Nom du modèle</label>
                         <input type="text" id="edit-name" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Langue</label>
-                        <select id="edit-lang" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 bg-white">
-                            <option value="FR">🇫🇷 Français</option>
-                            <option value="EN">🇬🇧 Anglais</option>
-                        </select>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Langue & Design</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <select id="edit-lang" class="w-full px-2 py-2 border border-slate-300 rounded-lg text-sm bg-white">
+                                <option value="FR">🇫🇷 FR</option>
+                                <option value="EN">🇬🇧 EN</option>
+                            </select>
+                            <select id="edit-design" class="w-full px-2 py-2 border border-slate-300 rounded-lg text-sm bg-white">
+                                <option value="corporate">Classique</option>
+                                <option value="modern">Moderne</option>
+                                <option value="minimal">Minimal</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Objet du courriel</label>
-                    <input type="text" id="edit-subject" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 font-mono">
+                    <input type="text" id="edit-subject" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-indigo-500">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Corps du message (Supporte les variables [NomVar] et options [?Option])</label>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500">Corps du message (Variables [Nom] & Options [?Option])</label>
+                        <button onclick="insertTemplateSnippet()" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium"><i class="fa-solid fa-wand-magic text-[10px]"></i> Insérer un bloc d'options</button>
+                    </div>
                     <textarea id="edit-body" rows="8" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-indigo-500"></textarea>
                 </div>
             </div>
@@ -111,10 +117,10 @@
         </div>
     </div>
 
-    <!-- Firebase SDKs -->
+    <!-- Scripts Firebase & Application Avancée -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, setDoc, doc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyC6EyK5xUX6wU0FqOqxbd7uwTlryZ4wAR4",
@@ -131,18 +137,20 @@
 
         const defaultTemplates = [
             {
-                id: "reminder-fr",
-                name: "Rappel d'échéance",
+                id: "adv-fr",
+                name: "Notification de mission",
                 lang: "FR",
-                subject: "Rappel important : [Tache] prévu le [Date]",
-                body: "Bonjour [Destinataire],\n\nCeci est un rappel concernant votre échéance pour [Tache].\n\nOptions à inclure :\n[?Joindre le rapport d'activité]\n[?Demander une extension de délai]\n\nMerci de valider votre présence.\n\nCordialement,\n[Expéditeur]"
+                design: "modern",
+                subject: "Validation de mission : [Mission] pour [Collaborateur]",
+                body: "Bonjour [Collaborateur],\n\nVotre mission [Mission] est confirmée pour la date du [Date].\n\nVeuillez valider les éléments suivants :\n[?Confirmer la présence sur site]\n[?Télécharger le badge d'accès]\n[?Demander un ordre de mission]\n\nBien cordialement,\n[Manager]"
             },
             {
-                id: "reminder-en",
-                name: "Due Date Reminder",
+                id: "adv-en",
+                name: "Mission Notification",
                 lang: "EN",
-                subject: "Important Reminder: [Task] due on [Date]",
-                body: "Hello [Recipient],\n\nThis is a reminder regarding your upcoming deadline for [Task].\n\nOptions to include:\n[?Attach activity report]\n[?Request deadline extension]\n\nPlease confirm your availability.\n\nBest regards,\n[Sender]"
+                design: "corporate",
+                subject: "Mission Approval: [Mission] for [Collaborateur]",
+                body: "Hello [Collaborateur],\n\nYour mission [Mission] is confirmed for [Date].\n\nPlease check the required options:\n[?Confirm on-site attendance]\n[?Download access badge]\n[?Request travel authorization]\n\nBest regards,\n[Manager]"
             }
         ];
 
@@ -156,47 +164,31 @@
                 onSnapshot(colRef, (snapshot) => {
                     if (!snapshot.empty) {
                         const cloudTemplates = [];
-                        snapshot.forEach(docSnap => {
-                            cloudTemplates.push(docSnap.data());
-                        });
+                        snapshot.forEach(docSnap => cloudTemplates.push(docSnap.data()));
                         templates = cloudTemplates;
                     } else {
                         defaultTemplates.forEach(t => saveToCloud(t));
                     }
                     renderTemplatesList();
-                    if (!currentSelectedId && templates.length > 0) {
-                        selectTemplate(templates[0].id);
-                    } else if (currentSelectedId) {
-                        selectTemplate(currentSelectedId);
-                    }
-                }, (error) => {
-                    console.warn("Mode LocalStorage actif", error);
-                    loadLocal();
-                });
-            } catch (e) {
-                loadLocal();
-            }
+                    if (!currentSelectedId && templates.length > 0) selectTemplate(templates[0].id);
+                    else if (currentSelectedId) selectTemplate(currentSelectedId);
+                }, (error) => { loadLocal(); });
+            } catch (e) { loadLocal(); }
         }
 
         async function saveToCloud(tpl) {
-            try {
-                await setDoc(doc(db, COLLECTION_NAME, tpl.id), tpl);
-            } catch (e) {
-                console.error("Erreur sauvegarde cloud", e);
-            }
+            try { await setDoc(doc(db, COLLECTION_NAME, tpl.id), tpl); } catch (e) {}
         }
 
         function loadLocal() {
-            const saved = localStorage.getItem('notification_templates');
-            if (saved) {
-                try { templates = JSON.parse(saved); } catch(e) {}
-            }
+            const saved = localStorage.getItem('notification_templates_adv');
+            if (saved) { try { templates = JSON.parse(saved); } catch(e) {} }
             renderTemplatesList();
             if (!currentSelectedId && templates.length > 0) selectTemplate(templates[0].id);
         }
 
         function persistTemplates() {
-            localStorage.setItem('notification_templates', JSON.stringify(templates));
+            localStorage.setItem('notification_templates_adv', JSON.stringify(templates));
             renderTemplatesList();
         }
 
@@ -205,24 +197,17 @@
             ['ALL', 'FR', 'EN'].forEach(l => {
                 const btn = document.getElementById(`filter-${l.toLowerCase()}`);
                 if (btn) {
-                    if (l === lang) {
-                        btn.className = "flex-1 py-1 bg-white rounded-md shadow-xs text-indigo-600 font-semibold transition";
-                    } else {
-                        btn.className = "flex-1 py-1 rounded-md transition text-slate-600";
-                    }
+                    btn.className = l === lang ? "flex-1 py-1 bg-white rounded-md shadow-xs text-indigo-600 font-semibold transition" : "flex-1 py-1 rounded-md transition text-slate-600";
                 }
             });
             renderTemplatesList();
         }
 
-        window.filterTemplates = function() {
-            renderTemplatesList();
-        }
+        window.filterTemplates = function() { renderTemplatesList(); }
 
         function renderTemplatesList() {
             const listEl = document.getElementById('templates-list');
             const searchVal = document.getElementById('search-input').value.toLowerCase();
-            
             const filtered = templates.filter(t => {
                 const matchLang = currentFilterLang === 'ALL' || t.lang === currentFilterLang;
                 const matchSearch = t.name.toLowerCase().includes(searchVal) || t.subject.toLowerCase().includes(searchVal);
@@ -239,6 +224,7 @@
                     <div class="overflow-hidden pr-2">
                         <div class="flex items-center space-x-2">
                             <span class="text-[10px] font-bold px-1.5 py-0.5 rounded ${t.lang === 'EN' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}">${t.lang || 'FR'}</span>
+                            <span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-mono">${t.design || 'corporate'}</span>
                             <h4 class="text-sm font-semibold text-slate-800 truncate">${t.name}</h4>
                         </div>
                         <p class="text-xs text-slate-500 truncate mt-0.5">${t.subject}</p>
@@ -261,9 +247,7 @@
             const varsSet = new Set();
             let match;
             while ((match = varRegex.exec(tpl.subject + "\n" + tpl.body)) !== null) {
-                if (!match[1].startsWith('?')) {
-                    varsSet.add(match[1]);
-                }
+                if (!match[1].startsWith('?')) varsSet.add(match[1]);
             }
 
             const mainEl = document.getElementById('main-content');
@@ -273,7 +257,7 @@
                         <div>
                             <div class="flex items-center space-x-2 mb-1">
                                 <span class="text-xs font-bold px-2 py-0.5 rounded ${tpl.lang === 'EN' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}">${tpl.lang || 'FR'}</span>
-                                <span class="text-xs text-slate-400 font-mono">ID: ${tpl.id}</span>
+                                <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono">Design: ${tpl.design || 'corporate'}</span>
                             </div>
                             <h2 class="text-xl font-bold text-slate-800">${tpl.name}</h2>
                         </div>
@@ -287,18 +271,18 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200/60">
                         <div class="space-y-3">
                             <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">Variables dynamiques</h3>
-                            <div id="variables-inputs" class="space-y-2">
-                                ${Array.from(varsSet).length === 0 ? '<p class="text-xs text-slate-400 italic">Aucune variable détectée</p>' : ''}
+                            <div class="space-y-2">
+                                ${Array.from(varsSet).length === 0 ? '<p class="text-xs text-slate-400 italic">Aucune variable</p>' : ''}
                                 ${Array.from(varsSet).map(v => `
                                     <div>
                                         <label class="block text-xs font-medium text-slate-600 mb-1">${v}</label>
-                                        <input type="text" data-var="${v}" oninput="updatePreview()" placeholder="Saisir ${v}..." class="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 var-input">
+                                        <input type="text" data-var="${v}" oninput="updatePreview()" placeholder="Valeur pour ${v}..." class="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 var-input">
                                     </div>
                                 `).join('')}
                             </div>
                         </div>
                         <div class="space-y-3">
-                            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">Options à cocher</h3>
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">Options à cocher interactives</h3>
                             <div id="options-checkboxes" class="space-y-2"></div>
                         </div>
                     </div>
@@ -311,15 +295,15 @@
                                     <i class="fa-regular fa-copy"></i><span>Copier Texte</span>
                                 </button>
                                 <button onclick="copyHtml()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold transition flex items-center space-x-1.5">
-                                    <i class="fa-solid fa-code"></i><span>Copier HTML</span>
+                                    <i class="fa-solid fa-code"></i><span>Copier HTML Stylisé</span>
                                 </button>
                             </div>
                         </div>
-                        <div class="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-xs">
-                            <div class="bg-slate-100 px-4 py-2.5 border-b border-slate-200 text-xs font-medium text-slate-600 flex items-center justify-between">
-                                <span id="preview-subject-label" class="font-semibold text-slate-700">Objet : ...</span>
+                        <div id="preview-wrapper" class="border rounded-xl overflow-hidden bg-white shadow-xs transition-all">
+                            <div id="preview-header-bar" class="px-4 py-2.5 border-b text-xs font-semibold flex items-center justify-between">
+                                <span id="preview-subject-label">Objet : ...</span>
                             </div>
-                            <div id="preview-body" class="p-5 text-sm font-mono whitespace-pre-wrap text-slate-700 leading-relaxed min-h-[160px]"></div>
+                            <div id="preview-body" class="p-6 text-sm whitespace-pre-wrap leading-relaxed min-h-[160px]"></div>
                         </div>
                     </div>
                 </div>
@@ -327,9 +311,7 @@
 
             const optionRegex = /\[\?([^\]]+)\]/g;
             const optionsContainer = document.getElementById('options-checkboxes');
-            let optMatch;
-            let optHtml = '';
-            let optIndex = 0;
+            let optMatch, optHtml = '', optIndex = 0;
             while ((optMatch = optionRegex.exec(tpl.body)) !== null) {
                 const optText = optMatch[1];
                 optHtml += `
@@ -340,12 +322,7 @@
                 `;
                 optIndex++;
             }
-            if (optIndex === 0) {
-                optionsContainer.innerHTML = `<p class="text-xs text-slate-400 italic">Aucune option [?] disponible</p>`;
-            } else {
-                optionsContainer.innerHTML = optHtml;
-            }
-
+            optionsContainer.innerHTML = optIndex === 0 ? `<p class="text-xs text-slate-400 italic">Aucune option [?] configurée</p>` : optHtml;
             updatePreview();
         }
 
@@ -367,15 +344,25 @@
             document.querySelectorAll('.opt-checkbox').forEach(chk => {
                 const optText = chk.getAttribute('data-option');
                 const regex = new RegExp(`\\[\\?${optText}\\]`, 'g');
-                if (chk.checked) {
-                    body = body.replace(regex, `✔ ${optText}`);
-                } else {
-                    body = body.replace(regex, '');
-                }
+                body = body.replace(regex, chk.checked ? `✔ ${optText}` : '');
             });
 
             document.getElementById('preview-subject-label').innerText = `Objet : ${subject}`;
             document.getElementById('preview-body').innerText = body;
+
+            // Application des styles selon le design choisi
+            const wrapper = document.getElementById('preview-wrapper');
+            const headerBar = document.getElementById('preview-header-bar');
+            if (tpl.design === 'modern') {
+                wrapper.className = "border border-indigo-100 rounded-xl overflow-hidden bg-indigo-50/20 shadow-sm";
+                headerBar.className = "bg-indigo-900 text-indigo-100 px-4 py-3 border-b border-indigo-100 text-xs font-semibold flex items-center justify-between";
+            } else if (tpl.design === 'minimal') {
+                wrapper.className = "border border-slate-200 rounded-lg overflow-hidden bg-white shadow-none";
+                headerBar.className = "bg-slate-50 text-slate-600 px-4 py-2 border-b border-slate-100 text-xs font-semibold flex items-center justify-between";
+            } else {
+                wrapper.className = "border border-slate-200 rounded-xl overflow-hidden bg-white shadow-xs";
+                headerBar.className = "bg-slate-100 text-slate-700 px-4 py-2.5 border-b border-slate-200 text-xs font-semibold flex items-center justify-between";
+            }
         }
 
         window.openNewModal = function() {
@@ -383,6 +370,7 @@
             document.getElementById('edit-id').value = 'tpl_' + Date.now();
             document.getElementById('edit-name').value = '';
             document.getElementById('edit-lang').value = 'FR';
+            document.getElementById('edit-design').value = 'corporate';
             document.getElementById('edit-subject').value = '';
             document.getElementById('edit-body').value = '';
             document.getElementById('template-modal').classList.remove('hidden');
@@ -396,6 +384,7 @@
             document.getElementById('edit-id').value = tpl.id;
             document.getElementById('edit-name').value = tpl.name;
             document.getElementById('edit-lang').value = tpl.lang || 'FR';
+            document.getElementById('edit-design').value = tpl.design || 'corporate';
             document.getElementById('edit-subject').value = tpl.subject;
             document.getElementById('edit-body').value = tpl.body;
             document.getElementById('template-modal').classList.remove('hidden');
@@ -407,26 +396,26 @@
             document.getElementById('template-modal').classList.add('hidden');
         }
 
+        window.insertTemplateSnippet = function() {
+            const textarea = document.getElementById('edit-body');
+            textarea.value += "\n\nOptions optionnelles :\n[?Option A inclure]\n[?Option B optionnelle]";
+        }
+
         window.saveTemplate = function() {
             const id = document.getElementById('edit-id').value;
             const name = document.getElementById('edit-name').value.trim();
             const lang = document.getElementById('edit-lang').value;
+            const design = document.getElementById('edit-design').value;
             const subject = document.getElementById('edit-subject').value.trim();
             const body = document.getElementById('edit-body').value.trim();
 
-            if (!name || !subject || !body) {
-                alert("Veuillez remplir tous les champs principaux.");
-                return;
-            }
+            if (!name || !subject || !body) { alert("Veuillez remplir tous les champs."); return; }
 
             const existingIndex = templates.findIndex(t => t.id === id);
-            const newTpl = { id, name, lang, subject, body };
+            const newTpl = { id, name, lang, design, subject, body };
 
-            if (existingIndex >= 0) {
-                templates[existingIndex] = newTpl;
-            } else {
-                templates.push(newTpl);
-            }
+            if (existingIndex >= 0) templates[existingIndex] = newTpl;
+            else templates.push(newTpl);
 
             saveToCloud(newTpl);
             persistTemplates();
@@ -435,18 +424,13 @@
         }
 
         window.deleteTemplate = function(id) {
-            if (confirm("Êtes-vous sûr de vouloir supprimer ce modèle ?")) {
+            if (confirm("Supprimer ce modèle ?")) {
                 templates = templates.filter(t => t.id !== id);
                 try { deleteDoc(doc(db, COLLECTION_NAME, id)); } catch(e) {}
                 persistTemplates();
                 if (currentSelectedId === id) {
                     currentSelectedId = null;
-                    document.getElementById('main-content').innerHTML = `
-                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-12 text-center text-slate-500">
-                            <i class="fa-regular fa-folder-open text-4xl text-indigo-300 mb-3"></i>
-                            <h2 class="text-lg font-semibold text-slate-700">Sélectionnez un modèle dans la liste</h2>
-                        </div>
-                    `;
+                    document.getElementById('main-content').innerHTML = `<div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-12 text-center text-slate-500"><h2 class="text-lg font-semibold text-slate-700">Sélectionnez un modèle</h2></div>`;
                 }
             }
         }
@@ -455,15 +439,14 @@
             const subject = document.getElementById('preview-subject-label').innerText.replace('Objet : ', '');
             const body = document.getElementById('preview-body').innerText;
             navigator.clipboard.writeText(`Objet : ${subject}\n\n${body}`);
-            alert("Modèle copié dans le presse-papier !");
+            alert("Texte copié !");
         }
 
         window.copyHtml = function() {
             const subject = document.getElementById('preview-subject-label').innerText.replace('Objet : ', '');
             const body = document.getElementById('preview-body').innerHTML.replace(/\n/g, '<br>');
-            const htmlContent = `<h3><b>${subject}</b></h3><br><p>${body}</p>`;
-            navigator.clipboard.writeText(htmlContent);
-            alert("Code HTML copié dans le presse-papier !");
+            navigator.clipboard.writeText(`<div><h3><b>${subject}</b></h3><br><p>${body}</p></div>`);
+            alert("Code HTML stylisé copié !");
         }
 
         initBackend();
