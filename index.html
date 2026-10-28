@@ -46,14 +46,14 @@
                 <!-- Sync Badge -->
                 <div id="syncBadge" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-slate-800 border border-slate-700 text-slate-300">
                     <span id="syncDot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-                    <span id="syncStatusText" class="font-medium">Initialisation...</span>
+                    <span id="syncStatusText" class="font-medium">Connexion...</span>
                 </div>
 
                 <!-- Auth Info -->
                 <div class="flex items-center space-x-2">
                     <div id="authBadge" class="flex items-center space-x-2 px-3 py-1.5 rounded-full bg-slate-800 border border-slate-700 text-slate-300">
                         <i class="fa-solid fa-user-shield text-indigo-400"></i>
-                        <span id="authUserText" class="font-mono text-[11px] truncate max-w-[120px]">Non connecté</span>
+                        <span id="authUserText" class="font-mono text-[11px] truncate max-w-[120px]">Anonyme</span>
                     </div>
                 </div>
 
@@ -120,7 +120,7 @@
                             <span id="currentLangBadge" class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">🇫🇷 FR</span>
                         </div>
                         <h2 id="currentTemplateTitle" class="text-base font-bold text-slate-900">Sélectionnez un modèle</h2>
-                        <p id="currentTemplateDesc" class="text-xs text-slate-500 mt-0.5">Choisissez un modèle à gauche pour personnaliser le message.</p>
+                        <p id="currentTemplateDesc" class="text-xs text-slate-500 mt-0.5">Choisissez un modèle à gauche pour le personnaliser.</p>
                     </div>
                     <div class="flex items-center space-x-1 shrink-0">
                         <button id="btnEditTemplate" title="Modifier le modèle" class="p-2 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-slate-50 transition">
@@ -350,6 +350,7 @@
             {
                 id: "relance-fr-1",
                 title: "Rappel d'échéance",
+                name: "Rappel d'échéance",
                 lang: "FR",
                 category: "Relance",
                 design: "modern",
@@ -359,6 +360,7 @@
             {
                 id: "reminder-en-1",
                 title: "Due Date Reminder",
+                name: "Due Date Reminder",
                 lang: "EN",
                 category: "Relance",
                 design: "modern",
@@ -379,10 +381,8 @@
 
         onAuthStateChanged(auth, (user) => {
             const authText = document.getElementById('authUserText');
-            if (user) {
+            if (user && authText) {
                 authText.innerText = "Anonyme (" + user.uid.substring(0, 5) + "...)";
-            } else {
-                authText.innerText = "Non connecté";
             }
         });
 
@@ -393,28 +393,38 @@
             try {
                 const colRef = collection(db, COLLECTION_NAME);
                 onSnapshot(colRef, (snapshot) => {
-                    syncStatus.innerText = "Cloud Synchro 🟢";
-                    syncDot.className = "w-2 h-2 rounded-full bg-emerald-400";
+                    if (syncStatus) syncStatus.innerText = "Cloud Synchro 🟢";
+                    if (syncDot) syncDot.className = "w-2 h-2 rounded-full bg-emerald-400";
                     
                     if (!snapshot.empty) {
                         templates = [];
-                        snapshot.forEach(docSnap => templates.push(docSnap.data()));
+                        snapshot.forEach(docSnap => {
+                            const data = docSnap.data();
+                            // Normalisation des champs pour éviter les incompatibilités
+                            data.title = data.title || data.name || "Sans titre";
+                            data.name = data.title;
+                            data.category = data.category || "Général";
+                            data.lang = data.lang || "FR";
+                            templates.push(data);
+                        });
                     } else {
                         defaultTemplates.forEach(t => saveToCloud(t));
                         templates = [...defaultTemplates];
                     }
+                    
                     renderTemplatesList();
                     
-                    // Sélection automatique du premier modèle si aucun n'est sélectionné ou si l'ancien n'existe plus
-                    if ((!currentSelectedId || !templates.some(t => t.id === currentSelectedId)) && templates.length > 0) {
-                        window.selectTemplate(templates[0].id);
-                    } else if (currentSelectedId) {
-                        window.selectTemplate(currentSelectedId);
+                    if (templates.length > 0) {
+                        if (!currentSelectedId || !templates.some(t => t.id === currentSelectedId)) {
+                            window.selectTemplate(templates[0].id);
+                        } else {
+                            window.selectTemplate(currentSelectedId);
+                        }
                     }
                 }, (error) => {
                     console.warn("Erreur Firestore, mode local", error);
-                    syncStatus.innerText = "Mode Local";
-                    syncDot.className = "w-2 h-2 rounded-full bg-amber-400";
+                    if (syncStatus) syncStatus.innerText = "Mode Local";
+                    if (syncDot) syncDot.className = "w-2 h-2 rounded-full bg-amber-400";
                     loadLocal();
                 });
             } catch (e) {
@@ -434,13 +444,14 @@
             const saved = localStorage.getItem('notification_templates');
             templates = saved ? JSON.parse(saved) : [...defaultTemplates];
             renderTemplatesList();
-            if (!currentSelectedId && templates.length > 0) window.selectTemplate(templates[0].id);
+            if (templates.length > 0) window.selectTemplate(templates[0].id);
         }
 
         function persistLocal() {
             localStorage.setItem('notification_templates', JSON.stringify(templates));
         }
 
+        // Écouteurs de filtres
         document.querySelectorAll('.lang-pill').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 document.querySelectorAll('.lang-pill').forEach(b => b.className = "lang-pill flex-1 py-1 rounded-md text-center text-slate-600 hover:text-slate-900 transition");
@@ -468,14 +479,14 @@
             const filtered = templates.filter(t => {
                 const matchLang = currentLangFilter === 'ALL' || t.lang === currentLangFilter;
                 const matchCat = currentCatFilter === 'ALL' || t.category === currentCatFilter;
-                const matchSearch = t.title.toLowerCase().includes(searchVal) || t.subject.toLowerCase().includes(searchVal);
+                const matchSearch = (t.title || t.name || '').toLowerCase().includes(searchVal) || (t.subject || '').toLowerCase().includes(searchVal);
                 return matchLang && matchCat && matchSearch;
             });
 
             document.getElementById('templateCount').innerText = `${filtered.length} modèle(s)`;
 
             if (filtered.length === 0) {
-                listEl.innerHTML = `<div class="p-6 text-center text-xs text-slate-400 italic">Aucun modèle trouvé</div>`;
+                listEl.innerHTML = `<div class="p-6 text-center text-xs text-slate-400 italic">Aucun modèle dans cette catégorie/langue</div>`;
                 return;
             }
 
@@ -486,7 +497,7 @@
                             <span class="text-[10px] font-bold px-1.5 py-0.5 rounded ${t.lang === 'EN' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}">${t.lang || 'FR'}</span>
                             <span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-medium">${t.category || 'Général'}</span>
                         </div>
-                        <h4 class="text-xs font-semibold text-slate-800 truncate">${t.title}</h4>
+                        <h4 class="text-xs font-semibold text-slate-800 truncate">${t.title || t.name}</h4>
                         <p class="text-[11px] text-slate-500 truncate mt-0.5 font-mono">${t.subject}</p>
                     </div>
                 </div>
@@ -501,7 +512,7 @@
 
             document.getElementById('currentCategoryBadge').innerText = tpl.category || 'Général';
             document.getElementById('currentLangBadge').innerText = tpl.lang === 'EN' ? '🇬🇧 EN' : '🇫🇷 FR';
-            document.getElementById('currentTemplateTitle').innerText = tpl.title;
+            document.getElementById('currentTemplateTitle').innerText = tpl.title || tpl.name;
             document.getElementById('currentTemplateDesc').innerText = tpl.subject;
             document.getElementById('presetStyleSelect').value = tpl.design || 'modern';
 
@@ -659,7 +670,7 @@
             document.getElementById('modalTemplateId').value = tpl.id;
             document.getElementById('modalInputLang').value = tpl.lang || 'FR';
             document.getElementById('modalInputCategory').value = tpl.category || 'Relance';
-            document.getElementById('modalInputTitle').value = tpl.title;
+            document.getElementById('modalInputTitle').value = tpl.title || tpl.name;
             document.getElementById('modalInputSubject').value = tpl.subject;
             document.getElementById('modalInputBody').value = tpl.body;
             modal.classList.remove('hidden');
@@ -684,12 +695,17 @@
         document.getElementById('templateForm').addEventListener('submit', (e) => {
             e.preventDefault();
             const id = document.getElementById('modalTemplateId').value;
+            const newLang = document.getElementById('modalInputLang').value;
+            const newCat = document.getElementById('modalInputCategory').value;
+            const titleVal = document.getElementById('modalInputTitle').value.trim();
+            
             const tpl = {
                 id: id,
-                lang: document.getElementById('modalInputLang').value,
-                category: document.getElementById('modalInputCategory').value,
+                lang: newLang,
+                category: newCat,
                 design: 'modern',
-                title: document.getElementById('modalInputTitle').value.trim(),
+                title: titleVal,
+                name: titleVal,
                 subject: document.getElementById('modalInputSubject').value.trim(),
                 body: document.getElementById('modalInputBody').value.trim()
             };
@@ -698,11 +714,23 @@
             if (idx >= 0) templates[idx] = tpl;
             else templates.push(tpl);
 
+            // Réinitialiser les filtres pour garantir que le nouveau modèle est immédiatement visible
+            currentLangFilter = 'ALL';
+            currentCatFilter = 'ALL';
+            document.querySelectorAll('.lang-pill').forEach(b => {
+                b.className = b.getAttribute('data-lang') === 'ALL' ? "lang-pill flex-1 py-1 rounded-md text-center bg-white text-indigo-700 shadow-sm transition" : "lang-pill flex-1 py-1 rounded-md text-center text-slate-600 hover:text-slate-900 transition";
+            });
+            document.querySelectorAll('.cat-pill').forEach(b => {
+                b.className = b.getAttribute('data-cat') === 'ALL' ? "cat-pill active px-2.5 py-1 rounded-lg font-medium whitespace-nowrap bg-indigo-600 text-white transition" : "cat-pill px-2.5 py-1 rounded-lg font-medium whitespace-nowrap bg-slate-100 text-slate-600 hover:bg-slate-200 transition";
+            });
+
             saveToCloud(tpl);
             persistLocal();
             modal.classList.add('hidden');
+            
+            // Sélection directe et mise à jour
             window.selectTemplate(id);
-            showToast("Modèle enregistré avec succès !");
+            showToast("Modèle créé et affiché !");
         });
 
         document.getElementById('btnDeleteTemplate').addEventListener('click', () => {
