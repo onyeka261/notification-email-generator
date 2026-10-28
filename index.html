@@ -55,10 +55,6 @@
                         <i class="fa-solid fa-user-shield text-indigo-400"></i>
                         <span id="authUserText" class="font-mono text-[11px] truncate max-w-[120px]">Non connecté</span>
                     </div>
-                    <button id="btnAuthAction" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-xl font-medium shadow-sm transition flex items-center space-x-1.5">
-                        <i id="authActionIcon" class="fa-solid fa-right-to-bracket text-xs"></i>
-                        <span id="authActionText">Connexion</span>
-                    </button>
                 </div>
 
                 <button id="btnNewTemplate" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-1.5 rounded-xl font-medium shadow-sm transition flex items-center space-x-1.5">
@@ -379,17 +375,15 @@
         let currentCatFilter = 'ALL';
         let variableValues = {};
 
-        // Connexion Anonyme automatique au démarrage
+        // Connexion Anonyme automatique
         signInAnonymously(auth).catch((error) => {
-            console.warn("Connexion anonyme échouée, mode local activé.", error);
+            console.warn("Connexion anonyme échouée, mode local.", error);
         });
 
         onAuthStateChanged(auth, (user) => {
             const authText = document.getElementById('authUserText');
-            const authBtn = document.getElementById('btnAuthAction');
             if (user) {
                 authText.innerText = "Anonyme (" + user.uid.substring(0, 5) + "...)";
-                authBtn.innerHTML = `<i class="fa-solid fa-user-check text-xs"></i><span>Connecté</span>`;
             } else {
                 authText.innerText = "Non connecté";
             }
@@ -403,14 +397,13 @@
             try {
                 const colRef = collection(db, COLLECTION_NAME);
                 onSnapshot(colRef, (snapshot) => {
-                    syncStatus.innerText = "Cloud Synchro";
+                    syncStatus.innerText = "Cloud Synchro 🟢";
                     syncDot.className = "w-2 h-2 rounded-full bg-emerald-400";
                     
                     if (!snapshot.empty) {
                         templates = [];
                         snapshot.forEach(docSnap => templates.push(docSnap.data()));
                     } else {
-                        // Injecter les modèles par défaut si vide
                         defaultTemplates.forEach(t => saveToCloud(t));
                         templates = [...defaultTemplates];
                     }
@@ -447,7 +440,7 @@
             localStorage.setItem('notification_templates', JSON.stringify(templates));
         }
 
-        // Gestion des filtres de langue
+        // Filtres de langue
         document.querySelectorAll('.lang-pill').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 document.querySelectorAll('.lang-pill').forEach(b => b.className = "lang-pill flex-1 py-1 rounded-md text-center text-slate-600 hover:text-slate-900 transition");
@@ -457,7 +450,7 @@
             });
         });
 
-        // Gestion des filtres de catégorie
+        // Filtres de catégorie
         document.querySelectorAll('.cat-pill').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 document.querySelectorAll('.cat-pill').forEach(b => b.className = "cat-pill px-2.5 py-1 rounded-lg font-medium whitespace-nowrap bg-slate-100 text-slate-600 hover:bg-slate-200 transition");
@@ -488,7 +481,7 @@
             }
 
             listEl.innerHTML = filtered.map(t => `
-                <div onclick="selectTemplate('${t.id}')" class="p-3 rounded-xl cursor-pointer transition flex items-center justify-between group ${currentSelectedId === t.id ? 'bg-indigo-50 border border-indigo-200' : 'hover:bg-slate-50 border border-transparent'}">
+                <div onclick="window.selectTemplate('${t.id}')" class="p-3 rounded-xl cursor-pointer transition flex items-center justify-between group ${currentSelectedId === t.id ? 'bg-indigo-50 border border-indigo-200' : 'hover:bg-slate-50 border border-transparent'}">
                     <div class="overflow-hidden pr-2">
                         <div class="flex items-center space-x-1.5 mb-0.5">
                             <span class="text-[10px] font-bold px-1.5 py-0.5 rounded ${t.lang === 'EN' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}">${t.lang || 'FR'}</span>
@@ -513,7 +506,7 @@
             document.getElementById('currentTemplateDesc').innerText = tpl.subject;
             document.getElementById('presetStyleSelect').value = tpl.design || 'modern';
 
-            // Détection automatique des variables [Variable]
+            // Détection dynamique des variables [Variable]
             const varRegex = /\[([^\]\?]+)\]/g;
             const varsSet = new Set();
             let match;
@@ -528,12 +521,12 @@
                 varContainer.innerHTML = Array.from(varsSet).map(v => `
                     <div>
                         <label class="block text-[11px] font-medium text-slate-600 mb-0.5">${v}</label>
-                        <input type="text" data-var="${v}" value="${variableValues[v] || ''}" placeholder="Saisir ${v}..." class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 var-input" oninput="updateLivePreview()">
+                        <input type="text" data-var="${v}" value="${variableValues[v] || ''}" placeholder="Saisir ${v}..." class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 var-input" oninput="window.updateLivePreview()">
                     </div>
                 `).join('');
             }
 
-            // Détection des options [?Option]
+            // Détection des options [?]
             const optRegex = /\[\?([^\]]+)\]/g;
             const optContainer = document.getElementById('dynamicCheckboxesContainer');
             let optMatch, optHtml = '', optCount = 0;
@@ -541,7 +534,7 @@
                 const optText = optMatch[1];
                 optHtml += `
                     <label class="flex items-center space-x-2 text-xs text-slate-700 cursor-pointer bg-slate-50 p-1.5 rounded-lg border border-slate-200">
-                        <input type="checkbox" data-option="${optText}" checked onchange="updateLivePreview()" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5 opt-checkbox">
+                        <input type="checkbox" data-option="${optText}" checked onchange="window.updateLivePreview()" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5 opt-checkbox">
                         <span class="truncate">${optText}</span>
                     </label>
                 `;
@@ -549,8 +542,8 @@
             }
             optContainer.innerHTML = optCount === 0 ? `<p class="text-slate-400 italic">Aucune option à cocher</p>` : optHtml;
 
-            updateLivePreview();
-        }
+            window.updateLivePreview();
+        };
 
         window.updateLivePreview = function() {
             const tpl = templates.find(t => t.id === currentSelectedId);
@@ -578,7 +571,7 @@
 
             document.getElementById('previewSubject').innerText = subject;
 
-            // Gestion du bouton d'action CTA
+            // Bouton d'action CTA
             const ctaEnabled = document.getElementById('enableCtaToggle').checked;
             const ctaText = document.getElementById('ctaBtnText').value;
             const ctaVar = document.getElementById('ctaBtnVar').value;
@@ -593,7 +586,7 @@
                 `;
             }
 
-            // Génération du rendu HTML visuel stylisé
+            // Rendu visuel HTML
             const design = document.getElementById('presetStyleSelect').value;
             const formattedBody = body.replace(/\n/g, '<br>');
             let htmlCard = '';
@@ -630,12 +623,19 @@
             document.getElementById('visualPreviewContainer').innerHTML = htmlCard;
             document.getElementById('textPreviewContainer').innerText = `Objet : ${subject}\n\n${body}`;
 
-            // Lien MailTo rapide
             const mailtoLink = document.getElementById('btnMailTo');
             mailtoLink.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-        }
+        };
 
-        // Bascule affichage Visuel HTML vs Texte Brut
+        // Bouton Réinitialiser les champs textes
+        document.getElementById('btnResetVars').addEventListener('click', () => {
+            variableValues = {};
+            document.querySelectorAll('.var-input').forEach(i => i.value = '');
+            window.updateLivePreview();
+            showToast("Champs réinitialisés.");
+        });
+
+        // Modes visuel vs texte
         document.getElementById('modeVisualBtn').addEventListener('click', () => {
             document.getElementById('modeVisualBtn').className = "px-3 py-1.5 rounded-md bg-white text-indigo-700 shadow-sm transition flex items-center gap-1.5";
             document.getElementById('modeTextBtn').className = "px-3 py-1.5 rounded-md text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5";
@@ -650,7 +650,7 @@
             document.getElementById('visualPreviewContainer').classList.add('hidden');
         });
 
-        // Gestion du modal Création / Édition
+        // Gestion du modal
         const modal = document.getElementById('templateModal');
         document.getElementById('btnNewTemplate').addEventListener('click', () => {
             document.getElementById('modalTitle').innerText = "Ajouter un nouveau modèle";
@@ -678,7 +678,6 @@
         document.getElementById('btnCloseModal').addEventListener('click', () => modal.classList.add('hidden'));
         document.getElementById('btnCancelModal').addEventListener('click', () => modal.classList.add('hidden'));
 
-        // Ajout d'option [?] rapide dans le modal
         document.getElementById('btnAddModalOption').addEventListener('click', () => {
             const optInput = document.getElementById('modalOptionInput');
             const val = optInput.value.trim();
@@ -692,7 +691,6 @@
             optInput.value = '';
         });
 
-        // Soumission du formulaire modal
         document.getElementById('templateForm').addEventListener('submit', (e) => {
             e.preventDefault();
             const id = document.getElementById('modalTemplateId').value;
@@ -713,11 +711,10 @@
             saveToCloud(tpl);
             persistLocal();
             modal.classList.add('hidden');
-            selectTemplate(id);
+            window.selectTemplate(id);
             showToast("Modèle enregistré avec succès !");
         });
 
-        // Suppression de modèle
         document.getElementById('btnDeleteTemplate').addEventListener('click', () => {
             if(!currentSelectedId) return;
             if(confirm("Voulez-vous vraiment supprimer ce modèle ?")) {
@@ -727,27 +724,26 @@
                 persistLocal();
                 currentSelectedId = templates.length > 0 ? templates[0].id : null;
                 renderTemplatesList();
-                if(currentSelectedId) selectTemplate(currentSelectedId);
+                if(currentSelectedId) window.selectTemplate(currentSelectedId);
                 showToast("Modèle supprimé.");
             }
         });
 
-        // Boutons de copie
         document.getElementById('btnCopySubject').addEventListener('click', () => {
             navigator.clipboard.writeText(document.getElementById('previewSubject').innerText);
-            showToast("Objet copié dans le presse-papier !");
+            showToast("Objet copié !");
         });
 
         document.getElementById('btnCopyBody').addEventListener('click', () => {
             const textContent = document.getElementById('textPreviewContainer').innerText;
             navigator.clipboard.writeText(textContent);
-            showToast("Corps du message copié pour l'e-mail !");
+            showToast("Corps copié pour l'e-mail !");
         });
 
-        document.getElementById('presetStyleSelect').addEventListener('change', updateLivePreview);
-        document.getElementById('enableCtaToggle').addEventListener('change', updateLivePreview);
-        document.getElementById('ctaBtnText').addEventListener('input', updateLivePreview);
-        document.getElementById('ctaBtnVar').addEventListener('input', updateLivePreview);
+        document.getElementById('presetStyleSelect').addEventListener('change', window.updateLivePreview);
+        document.getElementById('enableCtaToggle').addEventListener('change', window.updateLivePreview);
+        document.getElementById('ctaBtnText').addEventListener('input', window.updateLivePreview);
+        document.getElementById('ctaBtnVar').addEventListener('input', window.updateLivePreview);
 
         function showToast(msg) {
             const toast = document.getElementById('toast');
@@ -758,7 +754,6 @@
             }, 3000);
         }
 
-        // Initialisation de l'application
         initFirestore();
     </script>
 </body>
