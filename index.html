@@ -1,127 +1,342 @@
 <!DOCTYPE html>
-<html lang="fr" class="h-full">
+<html lang="fr" class="h-full bg-slate-50">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notification Studio — Studio Avancé</title>
-    <!-- Tailwind CSS CDN -->
+    <title>Notification & Mail Studio - Multilingue & Collaboratif</title>
+
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-</head>
-<body class="h-full bg-slate-50 text-slate-800 flex flex-col font-sans antialiased">
 
-    <!-- En-tête -->
-    <header class="bg-indigo-900 text-white shadow-md py-4 px-6 flex justify-between items-center z-10">
-        <div class="flex items-center space-x-3">
-            <div class="bg-indigo-700 p-2.5 rounded-xl shadow-inner">
-                <i class="fa-solid fa-wand-magic-sparkles text-xl text-indigo-200"></i>
+    <!-- Inter Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="h-full flex flex-col text-slate-800 antialiased overflow-hidden">
+
+    <!-- TOP HEADER -->
+    <header class="bg-slate-900 text-white shrink-0 border-b border-slate-800 shadow-md">
+        <div class="px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 p-2 rounded-xl text-white shadow-md">
+                    <i class="fa-solid fa-paper-plane text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-tight flex items-center gap-2">
+                        Notification Studio
+                        <span class="text-[10px] bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 px-2 py-0.5 rounded-full font-medium">Global Edition</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">Banque de courriels multilingue & générateur collaboratif</p>
+                </div>
             </div>
-            <div>
-                <h1 class="text-xl font-bold tracking-tight">Notification Studio — Édition Avancée</h1>
-                <p class="text-xs text-indigo-300">Modèles, variables, options interactives & designs</p>
+
+            <div class="flex items-center space-x-3 text-xs">
+                <!-- Sync Badge -->
+                <div id="syncBadge" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-slate-800 border border-slate-700 text-slate-300">
+                    <span id="syncDot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                    <span id="syncStatusText" class="font-medium">Initialisation...</span>
+                </div>
+
+                <!-- Auth Info & Login Button -->
+                <div class="flex items-center space-x-2">
+                    <div id="authBadge" class="flex items-center space-x-2 px-3 py-1.5 rounded-full bg-slate-800 border border-slate-700 text-slate-300">
+                        <i class="fa-solid fa-user-shield text-indigo-400"></i>
+                        <span id="authUserText" class="font-mono text-[11px] truncate max-w-[120px]">Non connecté</span>
+                    </div>
+                    <button id="btnAuthAction" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-xl font-medium shadow-sm transition flex items-center space-x-1.5">
+                        <i id="authActionIcon" class="fa-solid fa-right-to-bracket text-xs"></i>
+                        <span id="authActionText">Connexion</span>
+                    </button>
+                </div>
+
+                <button id="btnNewTemplate" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-1.5 rounded-xl font-medium shadow-sm transition flex items-center space-x-1.5">
+                    <i class="fa-solid fa-plus text-xs"></i>
+                    <span>Nouveau modèle</span>
+                </button>
             </div>
-        </div>
-        <div class="flex items-center space-x-3">
-            <div id="sync-badge" class="flex items-center space-x-2 bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 px-3 py-1.5 rounded-full text-xs font-medium shadow-sm">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>Cloud Synchro</span>
-            </div>
-            <button onclick="openNewModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-sm transition flex items-center space-x-2">
-                <i class="fa-solid fa-plus"></i>
-                <span>Nouveau modèle</span>
-            </button>
         </div>
     </header>
 
-    <!-- Corps principal -->
+    <!-- MAIN APP CONTAINER -->
     <div class="flex-1 flex overflow-hidden">
-        
-        <!-- Barre latérale -->
-        <aside class="w-80 bg-white border-r border-slate-200 flex flex-col shadow-sm">
-            <div class="p-4 border-b border-slate-100 space-y-3">
+
+        <!-- SIDEBAR: LIST OF TEMPLATES -->
+        <aside class="w-80 md:w-96 bg-white border-r border-slate-200 flex flex-col shrink-0">
+            <!-- Search & Filters -->
+            <div class="p-3 border-b border-slate-100 space-y-2 bg-slate-50/50">
                 <div class="relative">
-                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-                        <i class="fa-solid fa-magnifying-glass text-xs"></i>
-                    </span>
-                    <input type="text" id="search-input" oninput="filterTemplates()" placeholder="Rechercher un modèle..." class="w-full pl-9 pr-4 py-2 bg-slate-100 border-none rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 text-slate-700">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-sm"></i>
+                    <input type="text" id="searchInput" placeholder="Rechercher un modèle..." class="w-full pl-9 pr-3 py-1.5 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 </div>
-                <div class="flex rounded-lg bg-slate-100 p-1 text-xs font-medium text-slate-600">
-                    <button onclick="setLangFilter('ALL')" id="filter-all" class="flex-1 py-1 bg-white rounded-md shadow-xs text-indigo-600 font-semibold transition">Tous</button>
-                    <button onclick="setLangFilter('FR')" id="filter-fr" class="flex-1 py-1 rounded-md transition">🇫🇷 FR</button>
-                    <button onclick="setLangFilter('EN')" id="filter-en" class="flex-1 py-1 rounded-md transition">🇬🇧 EN</button>
+
+                <!-- Language Filter Pills -->
+                <div class="flex items-center space-x-1 bg-slate-200/60 p-1 rounded-lg text-xs font-medium" id="langFilterContainer">
+                    <button data-lang="ALL" class="lang-pill flex-1 py-1 rounded-md text-center bg-white text-indigo-700 shadow-sm transition">Tous</button>
+                    <button data-lang="FR" class="lang-pill flex-1 py-1 rounded-md text-center text-slate-600 hover:text-slate-900 transition">🇫🇷 FR</button>
+                    <button data-lang="EN" class="lang-pill flex-1 py-1 rounded-md text-center text-slate-600 hover:text-slate-900 transition">🇬🇧 EN</button>
+                </div>
+
+                <!-- Category Pills -->
+                <div class="flex items-center space-x-1 overflow-x-auto pb-1 text-xs" id="categoryFilterContainer">
+                    <button data-cat="ALL" class="cat-pill active px-2.5 py-1 rounded-lg font-medium whitespace-nowrap bg-indigo-600 text-white transition">Toutes</button>
+                    <button data-cat="Relance" class="cat-pill px-2.5 py-1 rounded-lg font-medium whitespace-nowrap bg-slate-100 text-slate-600 hover:bg-slate-200 transition">Relances</button>
+                    <button data-cat="Accès" class="cat-pill px-2.5 py-1 rounded-lg font-medium whitespace-nowrap bg-slate-100 text-slate-600 hover:bg-slate-200 transition">Accès</button>
+                    <button data-cat="Annonce" class="cat-pill px-2.5 py-1 rounded-lg font-medium whitespace-nowrap bg-slate-100 text-slate-600 hover:bg-slate-200 transition">Annonces</button>
+                    <button data-cat="Urgent" class="cat-pill px-2.5 py-1 rounded-lg font-medium whitespace-nowrap bg-slate-100 text-slate-600 hover:bg-slate-200 transition">Urgences</button>
                 </div>
             </div>
-            
-            <div id="templates-list" class="flex-1 overflow-y-auto divide-y divide-slate-100 p-2 space-y-1">
-                <!-- Rempli dynamiquement -->
+
+            <!-- List Container -->
+            <div id="templateList" class="flex-1 overflow-y-auto divide-y divide-slate-100 p-2 space-y-1">
+                <!-- Dynamically filled -->
+            </div>
+
+            <!-- Footer info -->
+            <div class="p-2.5 border-t border-slate-100 bg-slate-50 text-[11px] text-slate-500 flex justify-between items-center px-3">
+                <span id="templateCount">0 modèle(s)</span>
+                <span class="flex items-center gap-1 text-slate-400"><i class="fa-solid fa-cloud text-xs"></i> Synchro auto</span>
             </div>
         </aside>
 
-        <!-- Zone centrale -->
-        <main class="flex-1 flex flex-col bg-slate-100 overflow-y-auto p-6">
-            <div id="main-content" class="max-w-4xl w-full mx-auto space-y-6">
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-12 text-center text-slate-500">
-                    <i class="fa-regular fa-folder-open text-4xl text-indigo-300 mb-3"></i>
-                    <h2 class="text-lg font-semibold text-slate-700">Sélectionnez un modèle dans la liste</h2>
+        <!-- MAIN CONTENT AREA -->
+        <main class="flex-1 flex flex-col md:flex-row overflow-hidden bg-slate-100">
+
+            <!-- LEFT PANEL: CUSTOMIZATION & OPTIONS -->
+            <section class="w-full md:w-5/12 p-4 overflow-y-auto border-r border-slate-200 flex flex-col space-y-4">
+                
+                <!-- Selected Template Header -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-start justify-between">
+                    <div>
+                        <div class="flex items-center space-x-2 mb-1">
+                            <span id="currentCategoryBadge" class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-100">Catégorie</span>
+                            <span id="currentLangBadge" class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">🇫🇷 FR</span>
+                        </div>
+                        <h2 id="currentTemplateTitle" class="text-base font-bold text-slate-900">Sélectionnez un modèle</h2>
+                        <p id="currentTemplateDesc" class="text-xs text-slate-500 mt-0.5">Choisissez un modèle à gauche pour personnaliser le message.</p>
+                    </div>
+                    <div class="flex items-center space-x-1 shrink-0">
+                        <button id="btnEditTemplate" title="Modifier le modèle" class="p-2 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-slate-50 transition">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                        <button id="btnDeleteTemplate" title="Supprimer le modèle" class="p-2 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-slate-50 transition">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
                 </div>
-            </div>
+
+                <!-- CONTROLS & DYNAMIC INPUTS -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex-1 flex flex-col space-y-4">
+                    
+                    <!-- Design Presets Selector -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+                            <span>Style Visuel (Design Preset)</span>
+                            <i class="fa-solid fa-palette text-indigo-500"></i>
+                        </label>
+                        <select id="presetStyleSelect" class="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded-lg font-medium focus:ring-2 focus:ring-indigo-500">
+                            <option value="modern">🎨 Modern Minimalist (Bordure & Cartes)</option>
+                            <option value="corporate">🏢 Corporate / Officiel (Bannière & Pied de page)</option>
+                            <option value="urgent">⚠️ Alerte & Urgence (Fond accentué & Bouton Rouge)</option>
+                        </select>
+                    </div>
+
+                    <!-- Call To Action (Button Settings) -->
+                    <div id="ctaSettingsContainer" class="p-3 bg-indigo-50/50 rounded-xl border border-indigo-100 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-indigo-900 flex items-center gap-1.5">
+                                <i class="fa-solid fa-hand-pointer text-indigo-600"></i> Bouton d'action (CTA)
+                            </span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="enableCtaToggle" class="sr-only peer" checked>
+                                <div class="w-7 h-4 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-indigo-600"></div>
+                            </label>
+                        </div>
+                        <div id="ctaInputsBlock" class="grid grid-cols-2 gap-2 text-xs pt-1">
+                            <div>
+                                <label class="text-[10px] text-slate-500 block">Texte du bouton</label>
+                                <input type="text" id="ctaBtnText" value="Accéder au lien" class="w-full px-2 py-1 border border-slate-200 rounded bg-white">
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-slate-500 block">Variable du Lien</label>
+                                <input type="text" id="ctaBtnVar" value="Lien" class="w-full px-2 py-1 border border-slate-200 rounded bg-white">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Input Fields for Detected [Variables] -->
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-1">
+                            <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Champs Texte [ ... ]</h4>
+                            <button id="btnResetVars" class="text-[11px] text-slate-400 hover:text-indigo-600 flex items-center gap-1">
+                                <i class="fa-solid fa-rotate-left"></i> Effacer
+                            </button>
+                        </div>
+                        <div id="dynamicVariablesContainer" class="space-y-2 text-xs">
+                            <p class="text-slate-400 italic">Aucune variable détectée.</p>
+                        </div>
+                    </div>
+
+                    <!-- Checkboxes for Options [?] -->
+                    <div class="space-y-2 pt-2 border-t border-slate-100">
+                        <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Options à inclure [?]</h4>
+                        <div id="dynamicCheckboxesContainer" class="space-y-1.5 text-xs">
+                            <p class="text-slate-400 italic">Aucune option à cocher.</p>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- RIGHT PANEL: LIVE PREVIEW & EXPORT -->
+            <section class="w-full md:w-7/12 p-4 overflow-y-auto flex flex-col space-y-3 bg-slate-100">
+                
+                <!-- Format Switcher & Copy Actions Bar -->
+                <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-2">
+                    
+                    <!-- View Mode Toggle -->
+                    <div class="flex bg-slate-100 p-0.5 rounded-lg text-xs font-semibold">
+                        <button id="modeVisualBtn" class="px-3 py-1.5 rounded-md bg-white text-indigo-700 shadow-sm transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Email HTML (Stylé)
+                        </button>
+                        <button id="modeTextBtn" class="px-3 py-1.5 rounded-md text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-align-left"></i> Texte Brut
+                        </button>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex items-center space-x-2">
+                        <button id="btnCopySubject" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg transition" title="Copier l'objet">
+                            <i class="fa-regular fa-copy"></i> Objet
+                        </button>
+                        <button id="btnCopyBody" class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-lg border border-indigo-200 transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-copy"></i> Copier pour Mail
+                        </button>
+                        <a id="btnMailTo" href="#" target="_blank" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium rounded-lg shadow-sm transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-envelope-open-text"></i> Ouvrir Mail
+                        </a>
+                    </div>
+                </div>
+
+                <!-- PREVIEW CONTAINER -->
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm flex-1 flex flex-col overflow-hidden">
+                    
+                    <!-- Subject Header -->
+                    <div class="p-3 bg-slate-50 border-b border-slate-200 flex items-center space-x-2">
+                        <span class="text-xs font-bold text-slate-400 uppercase w-14 shrink-0">Objet :</span>
+                        <div id="previewSubject" class="text-sm font-semibold text-slate-800 break-all select-all">...</div>
+                    </div>
+
+                    <!-- Dynamic Body Preview Box -->
+                    <div class="p-4 flex-1 overflow-y-auto bg-slate-200/40 flex justify-center">
+                        
+                        <!-- Rich Visual HTML Preview -->
+                        <div id="visualPreviewContainer" class="w-full max-w-xl bg-white shadow-sm rounded-lg overflow-hidden border border-slate-200 self-start my-auto">
+                            <!-- Injected generated HTML -->
+                        </div>
+
+                        <!-- Plain Text Preview (Hidden by default) -->
+                        <div id="textPreviewContainer" class="w-full max-w-xl bg-white p-6 rounded-lg shadow-sm border border-slate-200 font-sans text-sm text-slate-800 whitespace-pre-wrap leading-relaxed select-all hidden">
+                            ...
+                        </div>
+
+                    </div>
+                </div>
+
+            </section>
         </main>
     </div>
 
-    <!-- Modal d'édition complet -->
-    <div id="template-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden">
-            <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                <h3 id="modal-title" class="font-bold text-slate-800 text-lg">Éditer le modèle</h3>
-                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg"><i class="fa-solid fa-xmark text-lg"></i></button>
+    <!-- MODAL: CREATE / EDIT TEMPLATE -->
+    <div id="templateModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden">
+            
+            <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <h3 id="modalTitle" class="font-bold text-slate-800 text-base">Ajouter un nouveau modèle</h3>
+                <button id="btnCloseModal" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
             </div>
-            <div class="p-6 overflow-y-auto space-y-4 flex-1">
-                <input type="hidden" id="edit-id">
-                <div class="grid grid-cols-2 gap-4">
+
+            <form id="templateForm" class="p-4 overflow-y-auto flex-1 space-y-4 text-xs">
+                <input type="hidden" id="modalTemplateId">
+                
+                <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Nom du modèle</label>
-                        <input type="text" id="edit-name" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500">
+                        <label class="block font-medium text-slate-700 mb-1">Langue</label>
+                        <select id="modalInputLang" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            <option value="FR">🇫🇷 Français</option>
+                            <option value="EN">🇬🇧 English</option>
+                        </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Langue & Design</label>
-                        <div class="grid grid-cols-2 gap-2">
-                            <select id="edit-lang" class="w-full px-2 py-2 border border-slate-300 rounded-lg text-sm bg-white">
-                                <option value="FR">🇫🇷 FR</option>
-                                <option value="EN">🇬🇧 EN</option>
-                            </select>
-                            <select id="edit-design" class="w-full px-2 py-2 border border-slate-300 rounded-lg text-sm bg-white">
-                                <option value="corporate">Classique</option>
-                                <option value="modern">Moderne</option>
-                                <option value="minimal">Minimal</option>
-                            </select>
-                        </div>
+                        <label class="block font-medium text-slate-700 mb-1">Catégorie</label>
+                        <select id="modalInputCategory" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            <option value="Relance">Relance</option>
+                            <option value="Accès">Accès</option>
+                            <option value="Annonce">Annonce</option>
+                            <option value="Urgent">Urgent</option>
+                        </select>
                     </div>
                 </div>
+
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Objet du courriel</label>
-                    <input type="text" id="edit-subject" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-indigo-500">
+                    <label class="block font-medium text-slate-700 mb-1">Titre du modèle</label>
+                    <input type="text" id="modalInputTitle" required placeholder="Ex: Rappel d'échéance" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 </div>
+
                 <div>
-                    <div class="flex justify-between items-center mb-1">
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500">Corps du message (Variables [Nom] & Options [?Option])</label>
-                        <button onclick="insertTemplateSnippet()" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium"><i class="fa-solid fa-wand-magic text-[10px]"></i> Insérer un bloc d'options</button>
+                    <label class="block font-medium text-slate-700 mb-1">Objet de l'email</label>
+                    <input type="text" id="modalInputSubject" required placeholder="Ex: [Rappel] Action requise avant le [Date]" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block font-medium text-slate-700 mb-1">Corps de l'email (Utilisez [NomVariable] et [?] Option)</label>
+                    <textarea id="modalInputBody" rows="7" required placeholder="Bonjour [Prénom],&#10;&#10;[?] Inclure lien d'accès: [Lien]" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 font-mono text-xs focus:outline-none"></textarea>
+                </div>
+
+                <!-- Add Dynamic Option Tool -->
+                <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                    <label class="block font-bold text-slate-700">Ajouter une option à cocher [?]</label>
+                    <div class="flex space-x-2">
+                        <input type="text" id="modalOptionInput" placeholder="Ex: Joindre la pièce jointe RIB" class="flex-1 px-3 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <button type="button" id="btnAddModalOption" class="px-3 py-1.5 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition">Ajouter</button>
                     </div>
-                    <textarea id="edit-body" rows="8" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-indigo-500"></textarea>
+                    <div id="modalOptionList" class="space-y-1 pt-1"></div>
                 </div>
-            </div>
-            <div class="p-4 border-t border-slate-100 bg-slate-50 flex justify-end space-x-3">
-                <button onclick="closeModal()" class="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-100">Annuler</button>
-                <button onclick="saveTemplate()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-500 shadow-sm">Enregistrer</button>
-            </div>
+
+                <div class="flex justify-end space-x-2 pt-2 border-t border-slate-100">
+                    <button type="button" id="btnCancelModal" class="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-medium">Annuler</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl transition">Enregistrer</button>
+                </div>
+            </form>
         </div>
     </div>
 
-    <!-- Scripts Firebase & Application Avancée -->
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-4 right-4 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center space-x-3 transition-all duration-300 transform translate-y-4 opacity-0 pointer-events-none z-50 border border-slate-700">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="toastMessage" class="text-xs font-medium">Notification</span>
+    </div>
+
+    <!-- FIREBASE & APPLICATION LOGIC -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, collection, setDoc, doc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
+        // Configuration officielle Firebase Firestore
         const firebaseConfig = {
             apiKey: "AIzaSyC6EyK5xUX6wU0FqOqxbd7uwTlryZ4wAR4",
             authDomain: "email-notification-6c89c.firebaseapp.com",
@@ -133,105 +348,154 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const auth = getAuth(app);
         const COLLECTION_NAME = "artifacts_templates";
 
+        // Modèles par défaut bilingues FR / EN
         const defaultTemplates = [
             {
-                id: "adv-fr",
-                name: "Notification de mission",
+                id: "relance-fr-1",
+                title: "Rappel d'échéance",
                 lang: "FR",
+                category: "Relance",
                 design: "modern",
-                subject: "Validation de mission : [Mission] pour [Collaborateur]",
-                body: "Bonjour [Collaborateur],\n\nVotre mission [Mission] est confirmée pour la date du [Date].\n\nVeuillez valider les éléments suivants :\n[?Confirmer la présence sur site]\n[?Télécharger le badge d'accès]\n[?Demander un ordre de mission]\n\nBien cordialement,\n[Manager]"
+                subject: "Rappel important : [Tache] prévu le [Date]",
+                body: "Bonjour [Destinataire],\n\nCeci est un rappel concernant votre échéance pour [Tache].\n\nOptions à inclure :\n[?Joindre le rapport d'activité]\n[?Demander une extension de délai]\n\nMerci de valider votre présence via ce lien : [Lien]\n\nCordialement,\n[Expéditeur]"
             },
             {
-                id: "adv-en",
-                name: "Mission Notification",
+                id: "reminder-en-1",
+                title: "Due Date Reminder",
                 lang: "EN",
-                design: "corporate",
-                subject: "Mission Approval: [Mission] for [Collaborateur]",
-                body: "Hello [Collaborateur],\n\nYour mission [Mission] is confirmed for [Date].\n\nPlease check the required options:\n[?Confirm on-site attendance]\n[?Download access badge]\n[?Request travel authorization]\n\nBest regards,\n[Manager]"
+                category: "Relance",
+                design: "modern",
+                subject: "Important Reminder: [Task] due on [Date]",
+                body: "Hello [Recipient],\n\nThis is a reminder regarding your upcoming deadline for [Task].\n\nOptions to include:\n[?Attach activity report]\n[?Request deadline extension]\n\nPlease confirm your availability via this link: [Lien]\n\nBest regards,\n[Sender]"
             }
         ];
 
-        let templates = [...defaultTemplates];
+        let templates = [];
         let currentSelectedId = null;
-        let currentFilterLang = 'ALL';
+        let currentLangFilter = 'ALL';
+        let currentCatFilter = 'ALL';
+        let variableValues = {};
 
-        function initBackend() {
+        // Connexion Anonyme automatique au démarrage
+        signInAnonymously(auth).catch((error) => {
+            console.warn("Connexion anonyme échouée, mode local activé.", error);
+        });
+
+        onAuthStateChanged(auth, (user) => {
+            const authText = document.getElementById('authUserText');
+            const authBtn = document.getElementById('btnAuthAction');
+            if (user) {
+                authText.innerText = "Anonyme (" + user.uid.substring(0, 5) + "...)";
+                authBtn.innerHTML = `<i class="fa-solid fa-user-check text-xs"></i><span>Connecté</span>`;
+            } else {
+                authText.innerText = "Non connecté";
+            }
+        });
+
+        // Chargement Firestore en temps réel
+        function initFirestore() {
+            const syncStatus = document.getElementById('syncStatusText');
+            const syncDot = document.getElementById('syncDot');
+
             try {
                 const colRef = collection(db, COLLECTION_NAME);
                 onSnapshot(colRef, (snapshot) => {
+                    syncStatus.innerText = "Cloud Synchro";
+                    syncDot.className = "w-2 h-2 rounded-full bg-emerald-400";
+                    
                     if (!snapshot.empty) {
-                        const cloudTemplates = [];
-                        snapshot.forEach(docSnap => cloudTemplates.push(docSnap.data()));
-                        templates = cloudTemplates;
+                        templates = [];
+                        snapshot.forEach(docSnap => templates.push(docSnap.data()));
                     } else {
+                        // Injecter les modèles par défaut si vide
                         defaultTemplates.forEach(t => saveToCloud(t));
+                        templates = [...defaultTemplates];
                     }
                     renderTemplatesList();
                     if (!currentSelectedId && templates.length > 0) selectTemplate(templates[0].id);
                     else if (currentSelectedId) selectTemplate(currentSelectedId);
-                }, (error) => { loadLocal(); });
-            } catch (e) { loadLocal(); }
+                }, (error) => {
+                    console.warn("Erreur Firestore, basculement en local", error);
+                    syncStatus.innerText = "Mode Local";
+                    syncDot.className = "w-2 h-2 rounded-full bg-amber-400";
+                    loadLocal();
+                });
+            } catch (e) {
+                loadLocal();
+            }
         }
 
         async function saveToCloud(tpl) {
-            try { await setDoc(doc(db, COLLECTION_NAME, tpl.id), tpl); } catch (e) {}
+            try {
+                await setDoc(doc(db, COLLECTION_NAME, tpl.id), tpl);
+            } catch (e) {
+                console.error("Erreur sauvegarde cloud", e);
+            }
         }
 
         function loadLocal() {
-            const saved = localStorage.getItem('notification_templates_adv');
-            if (saved) { try { templates = JSON.parse(saved); } catch(e) {} }
+            const saved = localStorage.getItem('notification_templates');
+            templates = saved ? JSON.parse(saved) : [...defaultTemplates];
             renderTemplatesList();
             if (!currentSelectedId && templates.length > 0) selectTemplate(templates[0].id);
         }
 
-        function persistTemplates() {
-            localStorage.setItem('notification_templates_adv', JSON.stringify(templates));
-            renderTemplatesList();
+        function persistLocal() {
+            localStorage.setItem('notification_templates', JSON.stringify(templates));
         }
 
-        window.setLangFilter = function(lang) {
-            currentFilterLang = lang;
-            ['ALL', 'FR', 'EN'].forEach(l => {
-                const btn = document.getElementById(`filter-${l.toLowerCase()}`);
-                if (btn) {
-                    btn.className = l === lang ? "flex-1 py-1 bg-white rounded-md shadow-xs text-indigo-600 font-semibold transition" : "flex-1 py-1 rounded-md transition text-slate-600";
-                }
+        // Gestion des filtres de langue
+        document.querySelectorAll('.lang-pill').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.lang-pill').forEach(b => b.className = "lang-pill flex-1 py-1 rounded-md text-center text-slate-600 hover:text-slate-900 transition");
+                e.currentTarget.className = "lang-pill flex-1 py-1 rounded-md text-center bg-white text-indigo-700 shadow-sm transition";
+                currentLangFilter = e.currentTarget.getAttribute('data-lang');
+                renderTemplatesList();
             });
-            renderTemplatesList();
-        }
+        });
 
-        window.filterTemplates = function() { renderTemplatesList(); }
+        // Gestion des filtres de catégorie
+        document.querySelectorAll('.cat-pill').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.cat-pill').forEach(b => b.className = "cat-pill px-2.5 py-1 rounded-lg font-medium whitespace-nowrap bg-slate-100 text-slate-600 hover:bg-slate-200 transition");
+                e.currentTarget.className = "cat-pill px-2.5 py-1 rounded-lg font-medium whitespace-nowrap bg-indigo-600 text-white transition";
+                currentCatFilter = e.currentTarget.getAttribute('data-cat');
+                renderTemplatesList();
+            });
+        });
+
+        document.getElementById('searchInput').addEventListener('input', renderTemplatesList);
 
         function renderTemplatesList() {
-            const listEl = document.getElementById('templates-list');
-            const searchVal = document.getElementById('search-input').value.toLowerCase();
+            const listEl = document.getElementById('templateList');
+            const searchVal = document.getElementById('searchInput').value.toLowerCase();
+
             const filtered = templates.filter(t => {
-                const matchLang = currentFilterLang === 'ALL' || t.lang === currentFilterLang;
-                const matchSearch = t.name.toLowerCase().includes(searchVal) || t.subject.toLowerCase().includes(searchVal);
-                return matchLang && matchSearch;
+                const matchLang = currentLangFilter === 'ALL' || t.lang === currentLangFilter;
+                const matchCat = currentCatFilter === 'ALL' || t.category === currentCatFilter;
+                const matchSearch = t.title.toLowerCase().includes(searchVal) || t.subject.toLowerCase().includes(searchVal);
+                return matchLang && matchCat && matchSearch;
             });
 
+            document.getElementById('templateCount').innerText = `${filtered.length} modèle(s)`;
+
             if (filtered.length === 0) {
-                listEl.innerHTML = `<div class="p-6 text-center text-xs text-slate-400">Aucun modèle trouvé</div>`;
+                listEl.innerHTML = `<div class="p-6 text-center text-xs text-slate-400 italic">Aucun modèle trouvé</div>`;
                 return;
             }
 
             listEl.innerHTML = filtered.map(t => `
                 <div onclick="selectTemplate('${t.id}')" class="p-3 rounded-xl cursor-pointer transition flex items-center justify-between group ${currentSelectedId === t.id ? 'bg-indigo-50 border border-indigo-200' : 'hover:bg-slate-50 border border-transparent'}">
                     <div class="overflow-hidden pr-2">
-                        <div class="flex items-center space-x-2">
+                        <div class="flex items-center space-x-1.5 mb-0.5">
                             <span class="text-[10px] font-bold px-1.5 py-0.5 rounded ${t.lang === 'EN' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}">${t.lang || 'FR'}</span>
-                            <span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-mono">${t.design || 'corporate'}</span>
-                            <h4 class="text-sm font-semibold text-slate-800 truncate">${t.name}</h4>
+                            <span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-medium">${t.category || 'Général'}</span>
                         </div>
-                        <p class="text-xs text-slate-500 truncate mt-0.5">${t.subject}</p>
-                    </div>
-                    <div class="opacity-0 group-hover:opacity-100 flex items-center space-x-1">
-                        <button onclick="event.stopPropagation(); editTemplate('${t.id}')" class="p-1.5 text-slate-400 hover:text-indigo-600 rounded"><i class="fa-solid fa-pen text-xs"></i></button>
-                        <button onclick="event.stopPropagation(); deleteTemplate('${t.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 rounded"><i class="fa-solid fa-trash text-xs"></i></button>
+                        <h4 class="text-xs font-semibold text-slate-800 truncate">${t.title}</h4>
+                        <p class="text-[11px] text-slate-500 truncate mt-0.5 font-mono">${t.subject}</p>
                     </div>
                 </div>
             `).join('');
@@ -243,213 +507,259 @@
             const tpl = templates.find(t => t.id === id);
             if (!tpl) return;
 
-            const varRegex = /\[([^\]]+)\]/g;
+            document.getElementById('currentCategoryBadge').innerText = tpl.category || 'Général';
+            document.getElementById('currentLangBadge').innerText = tpl.lang === 'EN' ? '🇬🇧 EN' : '🇫🇷 FR';
+            document.getElementById('currentTemplateTitle').innerText = tpl.title;
+            document.getElementById('currentTemplateDesc').innerText = tpl.subject;
+            document.getElementById('presetStyleSelect').value = tpl.design || 'modern';
+
+            // Détection automatique des variables [Variable]
+            const varRegex = /\[([^\]\?]+)\]/g;
             const varsSet = new Set();
             let match;
             while ((match = varRegex.exec(tpl.subject + "\n" + tpl.body)) !== null) {
-                if (!match[1].startsWith('?')) varsSet.add(match[1]);
+                if (match[1] !== 'Lien') varsSet.add(match[1]);
             }
 
-            const mainEl = document.getElementById('main-content');
-            mainEl.innerHTML = `
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
-                    <div class="flex justify-between items-start border-b border-slate-100 pb-4">
-                        <div>
-                            <div class="flex items-center space-x-2 mb-1">
-                                <span class="text-xs font-bold px-2 py-0.5 rounded ${tpl.lang === 'EN' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}">${tpl.lang || 'FR'}</span>
-                                <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono">Design: ${tpl.design || 'corporate'}</span>
-                            </div>
-                            <h2 class="text-xl font-bold text-slate-800">${tpl.name}</h2>
-                        </div>
-                        <div class="flex space-x-2">
-                            <button onclick="editTemplate('${tpl.id}')" class="px-3 py-1.5 text-xs font-medium border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-700 flex items-center space-x-1.5">
-                                <i class="fa-solid fa-pen text-xs"></i><span>Modifier</span>
-                            </button>
-                        </div>
+            const varContainer = document.getElementById('dynamicVariablesContainer');
+            if (varsSet.size === 0) {
+                varContainer.innerHTML = `<p class="text-slate-400 italic">Aucune variable détectée</p>`;
+            } else {
+                varContainer.innerHTML = Array.from(varsSet).map(v => `
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-600 mb-0.5">${v}</label>
+                        <input type="text" data-var="${v}" value="${variableValues[v] || ''}" placeholder="Saisir ${v}..." class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 var-input" oninput="updateLivePreview()">
                     </div>
+                `).join('');
+            }
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200/60">
-                        <div class="space-y-3">
-                            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">Variables dynamiques</h3>
-                            <div class="space-y-2">
-                                ${Array.from(varsSet).length === 0 ? '<p class="text-xs text-slate-400 italic">Aucune variable</p>' : ''}
-                                ${Array.from(varsSet).map(v => `
-                                    <div>
-                                        <label class="block text-xs font-medium text-slate-600 mb-1">${v}</label>
-                                        <input type="text" data-var="${v}" oninput="updatePreview()" placeholder="Valeur pour ${v}..." class="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 var-input">
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
-                        <div class="space-y-3">
-                            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">Options à cocher interactives</h3>
-                            <div id="options-checkboxes" class="space-y-2"></div>
-                        </div>
-                    </div>
-
-                    <div class="space-y-3">
-                        <div class="flex justify-between items-center">
-                            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">Aperçu du message</h3>
-                            <div class="flex space-x-2">
-                                <button onclick="copyPlain()" class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-semibold transition flex items-center space-x-1.5">
-                                    <i class="fa-regular fa-copy"></i><span>Copier Texte</span>
-                                </button>
-                                <button onclick="copyHtml()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold transition flex items-center space-x-1.5">
-                                    <i class="fa-solid fa-code"></i><span>Copier HTML Stylisé</span>
-                                </button>
-                            </div>
-                        </div>
-                        <div id="preview-wrapper" class="border rounded-xl overflow-hidden bg-white shadow-xs transition-all">
-                            <div id="preview-header-bar" class="px-4 py-2.5 border-b text-xs font-semibold flex items-center justify-between">
-                                <span id="preview-subject-label">Objet : ...</span>
-                            </div>
-                            <div id="preview-body" class="p-6 text-sm whitespace-pre-wrap leading-relaxed min-h-[160px]"></div>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            const optionRegex = /\[\?([^\]]+)\]/g;
-            const optionsContainer = document.getElementById('options-checkboxes');
-            let optMatch, optHtml = '', optIndex = 0;
-            while ((optMatch = optionRegex.exec(tpl.body)) !== null) {
+            // Détection des options [?Option]
+            const optRegex = /\[\?([^\]]+)\]/g;
+            const optContainer = document.getElementById('dynamicCheckboxesContainer');
+            let optMatch, optHtml = '', optCount = 0;
+            while ((optMatch = optRegex.exec(tpl.body)) !== null) {
                 const optText = optMatch[1];
                 optHtml += `
-                    <label class="flex items-center space-x-2 text-sm text-slate-700 cursor-pointer bg-white p-2 rounded-lg border border-slate-200/80 hover:border-slate-300">
-                        <input type="checkbox" data-option="${optText}" onchange="updatePreview()" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4 opt-checkbox" checked>
-                        <span class="text-xs">${optText}</span>
+                    <label class="flex items-center space-x-2 text-xs text-slate-700 cursor-pointer bg-slate-50 p-1.5 rounded-lg border border-slate-200">
+                        <input type="checkbox" data-option="${optText}" checked onchange="updateLivePreview()" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5 opt-checkbox">
+                        <span class="truncate">${optText}</span>
                     </label>
                 `;
-                optIndex++;
+                optCount++;
             }
-            optionsContainer.innerHTML = optIndex === 0 ? `<p class="text-xs text-slate-400 italic">Aucune option [?] configurée</p>` : optHtml;
-            updatePreview();
+            optContainer.innerHTML = optCount === 0 ? `<p class="text-slate-400 italic">Aucune option à cocher</p>` : optHtml;
+
+            updateLivePreview();
         }
 
-        window.updatePreview = function() {
+        window.updateLivePreview = function() {
             const tpl = templates.find(t => t.id === currentSelectedId);
             if (!tpl) return;
 
             let subject = tpl.subject;
             let body = tpl.body;
 
-            document.querySelectorAll('.var-input').forEach(input => {
-                const varName = input.getAttribute('data-var');
-                const val = input.value || `[${varName}]`;
-                const regex = new RegExp(`\\[${varName}\\]`, 'g');
-                subject = subject.replace(regex, val);
-                body = body.replace(regex, val);
+            // Remplacement des variables
+            document.querySelectorAll('.var-input').forEach(inp => {
+                const vName = inp.getAttribute('data-var');
+                const val = inp.value || `[${vName}]`;
+                variableValues[vName] = inp.value;
+                const reg = new RegExp(`\\[${vName}\\]`, 'g');
+                subject = subject.replace(reg, val);
+                body = body.replace(reg, val);
             });
 
+            // Remplacement des options [?]
             document.querySelectorAll('.opt-checkbox').forEach(chk => {
-                const optText = chk.getAttribute('data-option');
-                const regex = new RegExp(`\\[\\?${optText}\\]`, 'g');
-                body = body.replace(regex, chk.checked ? `✔ ${optText}` : '');
+                const optName = chk.getAttribute('data-option');
+                const reg = new RegExp(`\\[\\?${optName}\\]`, 'g');
+                body = body.replace(reg, chk.checked ? `✔ ${optName}` : '');
             });
 
-            document.getElementById('preview-subject-label').innerText = `Objet : ${subject}`;
-            document.getElementById('preview-body').innerText = body;
+            document.getElementById('previewSubject').innerText = subject;
 
-            // Application des styles selon le design choisi
-            const wrapper = document.getElementById('preview-wrapper');
-            const headerBar = document.getElementById('preview-header-bar');
-            if (tpl.design === 'modern') {
-                wrapper.className = "border border-indigo-100 rounded-xl overflow-hidden bg-indigo-50/20 shadow-sm";
-                headerBar.className = "bg-indigo-900 text-indigo-100 px-4 py-3 border-b border-indigo-100 text-xs font-semibold flex items-center justify-between";
-            } else if (tpl.design === 'minimal') {
-                wrapper.className = "border border-slate-200 rounded-lg overflow-hidden bg-white shadow-none";
-                headerBar.className = "bg-slate-50 text-slate-600 px-4 py-2 border-b border-slate-100 text-xs font-semibold flex items-center justify-between";
+            // Gestion du bouton d'action CTA
+            const ctaEnabled = document.getElementById('enableCtaToggle').checked;
+            const ctaText = document.getElementById('ctaBtnText').value;
+            const ctaVar = document.getElementById('ctaBtnVar').value;
+            const ctaLinkVal = variableValues[ctaVar] || '#';
+
+            let ctaHtmlBlock = '';
+            if (ctaEnabled) {
+                ctaHtmlBlock = `
+                    <div style="margin-top: 24px; text-align: center;">
+                        <a href="${ctaLinkVal}" target="_blank" style="background-color: #4f46e5; color: #ffffff; padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; text-decoration: none; display: inline-block; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">${ctaText}</a>
+                    </div>
+                `;
+            }
+
+            // Génération du rendu HTML visuel stylisé
+            const design = document.getElementById('presetStyleSelect').value;
+            const formattedBody = body.replace(/\n/g, '<br>');
+            let htmlCard = '';
+
+            if (design === 'modern') {
+                htmlCard = `
+                    <div style="font-family: 'Inter', sans-serif; background-color: #ffffff; padding: 24px; border-radius: 12px; border: 1px solid #e2e8f0; color: #1e293b; font-size: 14px; line-height: 1.6;">
+                        <div style="border-bottom: 2px solid #4f46e5; padding-bottom: 12px; margin-bottom: 16px;">
+                            <span style="font-size: 11px; font-weight: 700; color: #4f46e5; text-transform: uppercase; letter-spacing: 0.05em;">Notification Officielle</span>
+                        </div>
+                        <div>${formattedBody}</div>
+                        ${ctaHtmlBlock}
+                    </div>
+                `;
+            } else if (design === 'corporate') {
+                htmlCard = `
+                    <div style="font-family: 'Inter', sans-serif; background-color: #f8fafc; padding: 0; border-radius: 12px; border: 1px solid #cbd5e1; overflow: hidden; color: #0f172a; font-size: 14px; line-height: 1.6;">
+                        <div style="background-color: #0f172a; color: #ffffff; padding: 16px 24px; font-weight: bold; font-size: 15px;">Notification Studio — Entreprise</div>
+                        <div style="padding: 24px; background-color: #ffffff;">${formattedBody}</div>
+                        ${ctaHtmlBlock}
+                        <div style="background-color: #f1f5f9; padding: 12px 24px; font-size: 11px; color: #64748b; text-align: center; border-top: 1px solid #e2e8f0;">Message généré automatiquement via Notification Studio.</div>
+                    </div>
+                `;
             } else {
-                wrapper.className = "border border-slate-200 rounded-xl overflow-hidden bg-white shadow-xs";
-                headerBar.className = "bg-slate-100 text-slate-700 px-4 py-2.5 border-b border-slate-200 text-xs font-semibold flex items-center justify-between";
+                htmlCard = `
+                    <div style="font-family: 'Inter', sans-serif; background-color: #fef2f2; padding: 24px; border-radius: 12px; border: 1px solid #fecaca; color: #991b1b; font-size: 14px; line-height: 1.6;">
+                        <div style="font-weight: bold; font-size: 15px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">⚠️ ALERTE / URGENCE</div>
+                        <div style="color: #7f1d1d;">${formattedBody}</div>
+                        ${ctaHtmlBlock}
+                    </div>
+                `;
             }
+
+            document.getElementById('visualPreviewContainer').innerHTML = htmlCard;
+            document.getElementById('textPreviewContainer').innerText = `Objet : ${subject}\n\n${body}`;
+
+            // Lien MailTo rapide
+            const mailtoLink = document.getElementById('btnMailTo');
+            mailtoLink.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
         }
 
-        window.openNewModal = function() {
-            document.getElementById('modal-title').innerText = "Créer un nouveau modèle";
-            document.getElementById('edit-id').value = 'tpl_' + Date.now();
-            document.getElementById('edit-name').value = '';
-            document.getElementById('edit-lang').value = 'FR';
-            document.getElementById('edit-design').value = 'corporate';
-            document.getElementById('edit-subject').value = '';
-            document.getElementById('edit-body').value = '';
-            document.getElementById('template-modal').classList.remove('hidden');
-            document.getElementById('template-modal').classList.add('flex');
-        }
+        // Bascule affichage Visuel HTML vs Texte Brut
+        document.getElementById('modeVisualBtn').addEventListener('click', () => {
+            document.getElementById('modeVisualBtn').className = "px-3 py-1.5 rounded-md bg-white text-indigo-700 shadow-sm transition flex items-center gap-1.5";
+            document.getElementById('modeTextBtn').className = "px-3 py-1.5 rounded-md text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5";
+            document.getElementById('visualPreviewContainer').classList.remove('hidden');
+            document.getElementById('textPreviewContainer').classList.add('hidden');
+        });
 
-        window.editTemplate = function(id) {
-            const tpl = templates.find(t => t.id === id);
+        document.getElementById('modeTextBtn').addEventListener('click', () => {
+            document.getElementById('modeTextBtn').className = "px-3 py-1.5 rounded-md bg-white text-indigo-700 shadow-sm transition flex items-center gap-1.5";
+            document.getElementById('modeVisualBtn').className = "px-3 py-1.5 rounded-md text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5";
+            document.getElementById('textPreviewContainer').classList.remove('hidden');
+            document.getElementById('visualPreviewContainer').classList.add('hidden');
+        });
+
+        // Gestion du modal Création / Édition
+        const modal = document.getElementById('templateModal');
+        document.getElementById('btnNewTemplate').addEventListener('click', () => {
+            document.getElementById('modalTitle').innerText = "Ajouter un nouveau modèle";
+            document.getElementById('modalTemplateId').value = 'tpl_' + Date.now();
+            document.getElementById('modalInputTitle').value = '';
+            document.getElementById('modalInputSubject').value = '';
+            document.getElementById('modalInputBody').value = '';
+            document.getElementById('modalOptionList').innerHTML = '';
+            modal.classList.remove('hidden');
+        });
+
+        document.getElementById('btnEditTemplate').addEventListener('click', () => {
+            const tpl = templates.find(t => t.id === currentSelectedId);
             if (!tpl) return;
-            document.getElementById('modal-title').innerText = "Modifier le modèle";
-            document.getElementById('edit-id').value = tpl.id;
-            document.getElementById('edit-name').value = tpl.name;
-            document.getElementById('edit-lang').value = tpl.lang || 'FR';
-            document.getElementById('edit-design').value = tpl.design || 'corporate';
-            document.getElementById('edit-subject').value = tpl.subject;
-            document.getElementById('edit-body').value = tpl.body;
-            document.getElementById('template-modal').classList.remove('hidden');
-            document.getElementById('template-modal').classList.add('flex');
-        }
+            document.getElementById('modalTitle').innerText = "Modifier le modèle";
+            document.getElementById('modalTemplateId').value = tpl.id;
+            document.getElementById('modalInputLang').value = tpl.lang || 'FR';
+            document.getElementById('modalInputCategory').value = tpl.category || 'Relance';
+            document.getElementById('modalInputTitle').value = tpl.title;
+            document.getElementById('modalInputSubject').value = tpl.subject;
+            document.getElementById('modalInputBody').value = tpl.body;
+            modal.classList.remove('hidden');
+        });
 
-        window.closeModal = function() {
-            document.getElementById('template-modal').classList.remove('flex');
-            document.getElementById('template-modal').classList.add('hidden');
-        }
+        document.getElementById('btnCloseModal').addEventListener('click', () => modal.classList.add('hidden'));
+        document.getElementById('btnCancelModal').addEventListener('click', () => modal.classList.add('hidden'));
 
-        window.insertTemplateSnippet = function() {
-            const textarea = document.getElementById('edit-body');
-            textarea.value += "\n\nOptions optionnelles :\n[?Option A inclure]\n[?Option B optionnelle]";
-        }
+        // Ajout d'option [?] rapide dans le modal
+        document.getElementById('btnAddModalOption').addEventListener('click', () => {
+            const optInput = document.getElementById('modalOptionInput');
+            const val = optInput.value.trim();
+            if(!val) return;
+            const list = document.getElementById('modalOptionList');
+            const div = document.createElement('div');
+            div.className = "flex items-center justify-between bg-white p-1.5 rounded border border-slate-200 text-xs";
+            div.innerHTML = `<span>[?${val}]</span> <button type="button" class="text-rose-500 font-bold px-1" onclick="this.parentElement.remove()">×</button>`;
+            list.appendChild(div);
+            document.getElementById('modalInputBody').value += `\n[?${val}]`;
+            optInput.value = '';
+        });
 
-        window.saveTemplate = function() {
-            const id = document.getElementById('edit-id').value;
-            const name = document.getElementById('edit-name').value.trim();
-            const lang = document.getElementById('edit-lang').value;
-            const design = document.getElementById('edit-design').value;
-            const subject = document.getElementById('edit-subject').value.trim();
-            const body = document.getElementById('edit-body').value.trim();
+        // Soumission du formulaire modal
+        document.getElementById('templateForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const id = document.getElementById('modalTemplateId').value;
+            const tpl = {
+                id: id,
+                lang: document.getElementById('modalInputLang').value,
+                category: document.getElementById('modalInputCategory').value,
+                design: 'modern',
+                title: document.getElementById('modalInputTitle').value.trim(),
+                subject: document.getElementById('modalInputSubject').value.trim(),
+                body: document.getElementById('modalInputBody').value.trim()
+            };
 
-            if (!name || !subject || !body) { alert("Veuillez remplir tous les champs."); return; }
+            const idx = templates.findIndex(t => t.id === id);
+            if (idx >= 0) templates[idx] = tpl;
+            else templates.push(tpl);
 
-            const existingIndex = templates.findIndex(t => t.id === id);
-            const newTpl = { id, name, lang, design, subject, body };
-
-            if (existingIndex >= 0) templates[existingIndex] = newTpl;
-            else templates.push(newTpl);
-
-            saveToCloud(newTpl);
-            persistTemplates();
-            closeModal();
+            saveToCloud(tpl);
+            persistLocal();
+            modal.classList.add('hidden');
             selectTemplate(id);
-        }
+            showToast("Modèle enregistré avec succès !");
+        });
 
-        window.deleteTemplate = function(id) {
-            if (confirm("Supprimer ce modèle ?")) {
+        // Suppression de modèle
+        document.getElementById('btnDeleteTemplate').addEventListener('click', () => {
+            if(!currentSelectedId) return;
+            if(confirm("Voulez-vous vraiment supprimer ce modèle ?")) {
+                const id = currentSelectedId;
                 templates = templates.filter(t => t.id !== id);
-                try { deleteDoc(doc(db, COLLECTION_NAME, id)); } catch(e) {}
-                persistTemplates();
-                if (currentSelectedId === id) {
-                    currentSelectedId = null;
-                    document.getElementById('main-content').innerHTML = `<div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-12 text-center text-slate-500"><h2 class="text-lg font-semibold text-slate-700">Sélectionnez un modèle</h2></div>`;
-                }
+                try { deleteDoc(doc(db, COLLECTION_NAME, id)); } catch(e){}
+                persistLocal();
+                currentSelectedId = templates.length > 0 ? templates[0].id : null;
+                renderTemplatesList();
+                if(currentSelectedId) selectTemplate(currentSelectedId);
+                showToast("Modèle supprimé.");
             }
+        });
+
+        // Boutons de copie
+        document.getElementById('btnCopySubject').addEventListener('click', () => {
+            navigator.clipboard.writeText(document.getElementById('previewSubject').innerText);
+            showToast("Objet copié dans le presse-papier !");
+        });
+
+        document.getElementById('btnCopyBody').addEventListener('click', () => {
+            const textContent = document.getElementById('textPreviewContainer').innerText;
+            navigator.clipboard.writeText(textContent);
+            showToast("Corps du message copié pour l'e-mail !");
+        });
+
+        document.getElementById('presetStyleSelect').addEventListener('change', updateLivePreview);
+        document.getElementById('enableCtaToggle').addEventListener('change', updateLivePreview);
+        document.getElementById('ctaBtnText').addEventListener('input', updateLivePreview);
+        document.getElementById('ctaBtnVar').addEventListener('input', updateLivePreview);
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').innerText = msg;
+            toast.classList.remove('translate-y-4', 'opacity-0', 'pointer-events-none');
+            setTimeout(() => {
+                toast.classList.add('translate-y-4', 'opacity-0', 'pointer-events-none');
+            }, 3000);
         }
 
-        window.copyPlain = function() {
-            const subject = document.getElementById('preview-subject-label').innerText.replace('Objet : ', '');
-            const body = document.getElementById('preview-body').innerText;
-            navigator.clipboard.writeText(`Objet : ${subject}\n\n${body}`);
-            alert("Texte copié !");
-        }
-
-        window.copyHtml = function() {
-            const subject = document.getElementById('preview-subject-label').innerText.replace('Objet : ', '');
-            const body = document.getElementById('preview-body').innerHTML.replace(/\n/g, '<br>');
-            navigator.clipboard.writeText(`<div><h3><b>${subject}</b></h3><br><p>${body}</p></div>`);
-            alert("Code HTML stylisé copié !");
-        }
-
-        initBackend();
+        // Initialisation de l'application
+        initFirestore();
     </script>
 </body>
 </html>
