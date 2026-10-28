@@ -114,7 +114,7 @@
     <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, onSnapshot } from "https://https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Configuration Firebase officielle
         const firebaseConfig = {
@@ -165,7 +165,6 @@
                         });
                         templates = cloudTemplates;
                     } else {
-                        // Charger les défauts si vide
                         defaultTemplates.forEach(t => saveToCloud(t));
                     }
                     renderTemplatesList();
@@ -257,7 +256,6 @@
             const tpl = templates.find(t => t.id === id);
             if (!tpl) return;
 
-            // Extraire les variables [NomVariable]
             const varRegex = /\[([^\]]+)\]/g;
             const varsSet = new Set();
             let match;
@@ -285,7 +283,6 @@
                         </div>
                     </div>
 
-                    <!-- Variables et Options dynamiques -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200/60">
                         <div class="space-y-3">
                             <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">Variables dynamiques</h3>
@@ -301,13 +298,10 @@
                         </div>
                         <div class="space-y-3">
                             <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">Options à cocher</h3>
-                            <div id="options-checkboxes" class="space-y-2">
-                                <!-- Rempli dynamiquement -->
-                            </div>
+                            <div id="options-checkboxes" class="space-y-2"></div>
                         </div>
                     </div>
 
-                    <!-- Aperçu final interactif -->
                     <div class="space-y-3">
                         <div class="flex justify-between items-center">
                             <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">Aperçu du message</h3>
@@ -330,7 +324,6 @@
                 </div>
             `;
 
-            // Parser les options [?Option]
             const optionRegex = /\[\?([^\]]+)\]/g;
             const optionsContainer = document.getElementById('options-checkboxes');
             let optMatch;
@@ -362,7 +355,6 @@
             let subject = tpl.subject;
             let body = tpl.body;
 
-            // Remplacer les variables
             document.querySelectorAll('.var-input').forEach(input => {
                 const varName = input.getAttribute('data-var');
                 const val = input.value || `[${varName}]`;
@@ -371,7 +363,6 @@
                 body = body.replace(regex, val);
             });
 
-            // Gérer les options [?Option]
             document.querySelectorAll('.opt-checkbox').forEach(chk => {
                 const optText = chk.getAttribute('data-option');
                 const regex = new RegExp(`\\[\\?${optText}\\]`, 'g');
@@ -474,7 +465,6 @@
             alert("Code HTML copié dans le presse-papier !");
         }
 
-        // Lancement initial
         initBackend();
     </script>
 </body>
