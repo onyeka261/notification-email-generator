@@ -116,7 +116,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Configuration Firebase officielle
         const firebaseConfig = {
             apiKey: "AIzaSyC6EyK5xUX6wU0FqOqxbd7uwTlryZ4wAR4",
             authDomain: "email-notification-6c89c.firebaseapp.com",
@@ -126,12 +125,10 @@
             appId: "1:587710435543:web:bd8e6904ddceea43b9e092"
         };
 
-        // Initialisation Firebase & Firestore
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const COLLECTION_NAME = "artifacts_templates";
 
-        // Modèles de base par défaut (bilingues FR/EN)
         const defaultTemplates = [
             {
                 id: "reminder-fr",
@@ -153,7 +150,6 @@
         let currentSelectedId = null;
         let currentFilterLang = 'ALL';
 
-        // Écouteur en temps réel Firestore
         function initBackend() {
             try {
                 const colRef = collection(db, COLLECTION_NAME);
@@ -168,9 +164,13 @@
                         defaultTemplates.forEach(t => saveToCloud(t));
                     }
                     renderTemplatesList();
-                    if (currentSelectedId) selectTemplate(currentSelectedId);
+                    if (!currentSelectedId && templates.length > 0) {
+                        selectTemplate(templates[0].id);
+                    } else if (currentSelectedId) {
+                        selectTemplate(currentSelectedId);
+                    }
                 }, (error) => {
-                    console.warn("Mode LocalStorage actif (Erreur Firestore)", error);
+                    console.warn("Mode LocalStorage actif", error);
                     loadLocal();
                 });
             } catch (e) {
@@ -192,6 +192,7 @@
                 try { templates = JSON.parse(saved); } catch(e) {}
             }
             renderTemplatesList();
+            if (!currentSelectedId && templates.length > 0) selectTemplate(templates[0].id);
         }
 
         function persistTemplates() {
