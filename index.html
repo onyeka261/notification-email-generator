@@ -49,7 +49,7 @@
                     <span id="syncStatusText" class="font-medium">Initialisation...</span>
                 </div>
 
-                <!-- Auth Info & Login Button -->
+                <!-- Auth Info -->
                 <div class="flex items-center space-x-2">
                     <div id="authBadge" class="flex items-center space-x-2 px-3 py-1.5 rounded-full bg-slate-800 border border-slate-700 text-slate-300">
                         <i class="fa-solid fa-user-shield text-indigo-400"></i>
@@ -332,7 +332,6 @@
         import { getFirestore, collection, setDoc, doc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-        // Configuration officielle Firebase Firestore
         const firebaseConfig = {
             apiKey: "AIzaSyC6EyK5xUX6wU0FqOqxbd7uwTlryZ4wAR4",
             authDomain: "email-notification-6c89c.firebaseapp.com",
@@ -347,7 +346,6 @@
         const auth = getAuth(app);
         const COLLECTION_NAME = "artifacts_templates";
 
-        // Modèles par défaut bilingues FR / EN
         const defaultTemplates = [
             {
                 id: "relance-fr-1",
@@ -375,9 +373,8 @@
         let currentCatFilter = 'ALL';
         let variableValues = {};
 
-        // Connexion Anonyme automatique
         signInAnonymously(auth).catch((error) => {
-            console.warn("Connexion anonyme échouée, mode local.", error);
+            console.warn("Connexion anonyme échouée", error);
         });
 
         onAuthStateChanged(auth, (user) => {
@@ -389,7 +386,6 @@
             }
         });
 
-        // Chargement Firestore en temps réel
         function initFirestore() {
             const syncStatus = document.getElementById('syncStatusText');
             const syncDot = document.getElementById('syncDot');
@@ -408,10 +404,15 @@
                         templates = [...defaultTemplates];
                     }
                     renderTemplatesList();
-                    if (!currentSelectedId && templates.length > 0) selectTemplate(templates[0].id);
-                    else if (currentSelectedId) selectTemplate(currentSelectedId);
+                    
+                    // Sélection automatique du premier modèle si aucun n'est sélectionné ou si l'ancien n'existe plus
+                    if ((!currentSelectedId || !templates.some(t => t.id === currentSelectedId)) && templates.length > 0) {
+                        window.selectTemplate(templates[0].id);
+                    } else if (currentSelectedId) {
+                        window.selectTemplate(currentSelectedId);
+                    }
                 }, (error) => {
-                    console.warn("Erreur Firestore, basculement en local", error);
+                    console.warn("Erreur Firestore, mode local", error);
                     syncStatus.innerText = "Mode Local";
                     syncDot.className = "w-2 h-2 rounded-full bg-amber-400";
                     loadLocal();
@@ -433,14 +434,13 @@
             const saved = localStorage.getItem('notification_templates');
             templates = saved ? JSON.parse(saved) : [...defaultTemplates];
             renderTemplatesList();
-            if (!currentSelectedId && templates.length > 0) selectTemplate(templates[0].id);
+            if (!currentSelectedId && templates.length > 0) window.selectTemplate(templates[0].id);
         }
 
         function persistLocal() {
             localStorage.setItem('notification_templates', JSON.stringify(templates));
         }
 
-        // Filtres de langue
         document.querySelectorAll('.lang-pill').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 document.querySelectorAll('.lang-pill').forEach(b => b.className = "lang-pill flex-1 py-1 rounded-md text-center text-slate-600 hover:text-slate-900 transition");
@@ -450,7 +450,6 @@
             });
         });
 
-        // Filtres de catégorie
         document.querySelectorAll('.cat-pill').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 document.querySelectorAll('.cat-pill').forEach(b => b.className = "cat-pill px-2.5 py-1 rounded-lg font-medium whitespace-nowrap bg-slate-100 text-slate-600 hover:bg-slate-200 transition");
@@ -506,7 +505,6 @@
             document.getElementById('currentTemplateDesc').innerText = tpl.subject;
             document.getElementById('presetStyleSelect').value = tpl.design || 'modern';
 
-            // Détection dynamique des variables [Variable]
             const varRegex = /\[([^\]\?]+)\]/g;
             const varsSet = new Set();
             let match;
@@ -526,7 +524,6 @@
                 `).join('');
             }
 
-            // Détection des options [?]
             const optRegex = /\[\?([^\]]+)\]/g;
             const optContainer = document.getElementById('dynamicCheckboxesContainer');
             let optMatch, optHtml = '', optCount = 0;
@@ -552,7 +549,6 @@
             let subject = tpl.subject;
             let body = tpl.body;
 
-            // Remplacement des variables
             document.querySelectorAll('.var-input').forEach(inp => {
                 const vName = inp.getAttribute('data-var');
                 const val = inp.value || `[${vName}]`;
@@ -562,7 +558,6 @@
                 body = body.replace(reg, val);
             });
 
-            // Remplacement des options [?]
             document.querySelectorAll('.opt-checkbox').forEach(chk => {
                 const optName = chk.getAttribute('data-option');
                 const reg = new RegExp(`\\[\\?${optName}\\]`, 'g');
@@ -571,7 +566,6 @@
 
             document.getElementById('previewSubject').innerText = subject;
 
-            // Bouton d'action CTA
             const ctaEnabled = document.getElementById('enableCtaToggle').checked;
             const ctaText = document.getElementById('ctaBtnText').value;
             const ctaVar = document.getElementById('ctaBtnVar').value;
@@ -586,7 +580,6 @@
                 `;
             }
 
-            // Rendu visuel HTML
             const design = document.getElementById('presetStyleSelect').value;
             const formattedBody = body.replace(/\n/g, '<br>');
             let htmlCard = '';
@@ -627,7 +620,6 @@
             mailtoLink.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
         };
 
-        // Bouton Réinitialiser les champs textes
         document.getElementById('btnResetVars').addEventListener('click', () => {
             variableValues = {};
             document.querySelectorAll('.var-input').forEach(i => i.value = '');
@@ -635,7 +627,6 @@
             showToast("Champs réinitialisés.");
         });
 
-        // Modes visuel vs texte
         document.getElementById('modeVisualBtn').addEventListener('click', () => {
             document.getElementById('modeVisualBtn').className = "px-3 py-1.5 rounded-md bg-white text-indigo-700 shadow-sm transition flex items-center gap-1.5";
             document.getElementById('modeTextBtn').className = "px-3 py-1.5 rounded-md text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5";
@@ -650,7 +641,6 @@
             document.getElementById('visualPreviewContainer').classList.add('hidden');
         });
 
-        // Gestion du modal
         const modal = document.getElementById('templateModal');
         document.getElementById('btnNewTemplate').addEventListener('click', () => {
             document.getElementById('modalTitle').innerText = "Ajouter un nouveau modèle";
